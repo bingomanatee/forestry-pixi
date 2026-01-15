@@ -1,0 +1,29 @@
+{
+  "name": "@forestry-pixi/grid",
+  "version": "1.0.0",
+  "description": "Grid component for forestry-pixi",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.5.3",
+    "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "@wonderlandlabs/forestry4": "^4.1.10",
+    "zod": "^4.3.5"
+  }
+}
