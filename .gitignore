@@ -8,6 +8,10 @@ yarn-error.log*
 /.pnp
 .pnp.js
 
+# Build output
+dist
+*.tsbuildinfo
+
 # Yarn
 .yarn/cache
 .yarn/install-state.gz
