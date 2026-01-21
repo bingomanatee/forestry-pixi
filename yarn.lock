@@ -258,17 +258,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@forestry-pixi/grid@workspace:packages/grid"
   dependencies:
-    "@types/react": "npm:^18.2.0"
-    "@types/react-dom": "npm:^18.2.0"
     "@wonderlandlabs/forestry4": "npm:^4.1.10"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    pixi.js: "npm:^8.6.6"
     typescript: "npm:^5.5.3"
     vitest: "npm:^4.0.17"
     zod: "npm:^4.3.5"
   peerDependencies:
-    react: ^18.0.0
-    react-dom: ^18.0.0
+    pixi.js: ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -1895,7 +1891,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pixi.js@npm:^8.0.0, pixi.js@npm:^8.15.0":
+"pixi.js@npm:^8.0.0, pixi.js@npm:^8.15.0, pixi.js@npm:^8.6.6":
   version: 8.15.0
   resolution: "pixi.js@npm:8.15.0"
   dependencies:

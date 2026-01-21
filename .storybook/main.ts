@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/html-vite';
+import { mergeConfig } from 'vite';
 
 const config: StorybookConfig = {
   stories: ['../packages/*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -6,6 +7,13 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/html-vite',
     options: {},
+  },
+  async viteFinal(config) {
+    return mergeConfig(config, {
+      resolve: {
+        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+      },
+    });
   },
 };
 
