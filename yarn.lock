@@ -286,6 +286,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@forestry-pixi/resizer@workspace:packages/resizer":
+  version: 0.0.0-use.local
+  resolution: "@forestry-pixi/resizer@workspace:packages/resizer"
+  dependencies:
+    "@wonderlandlabs/forestry4": "npm:^4.1.10"
+    pixi.js: "npm:^8.15.0"
+    typescript: "npm:^5.5.3"
+    vitest: "npm:^4.0.17"
+    zod: "npm:^4.3.5"
+  languageName: unknown
+  linkType: soft
+
 "@forestry-pixi/root-container@workspace:packages/root-container":
   version: 0.0.0-use.local
   resolution: "@forestry-pixi/root-container@workspace:packages/root-container"

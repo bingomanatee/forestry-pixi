@@ -8,6 +8,9 @@ const config: StorybookConfig = {
     name: '@storybook/html-vite',
     options: {},
   },
+  docs: {
+    autodocs: false,
+  },
   async viteFinal(config) {
     return mergeConfig(config, {
       resolve: {

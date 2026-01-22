@@ -1,0 +1,31 @@
+import {Container, Rectangle} from 'pixi.js';
+import {EnableHandlesConfig} from "./enableHandlesConfig";
+import {ResizerStore} from "./ResizerStore";
+
+/**
+ * Enable resize handles on a container.
+ * Handles persist until removeHandles() is called.
+ *
+ * @param container - The PixiJS container to add handles to
+ * @param rect - Initial rectangle dimensions
+ * @param config - Handle configuration
+ * @returns ResizerStore - Forestry state managing the current rectangle
+ */
+export function enableHandles(
+  container: Container,
+  rect: Rectangle,
+  config: EnableHandlesConfig = {}
+): ResizerStore {
+  const store = new ResizerStore({
+    container,
+    rect,
+    onRelease: config.onRelease,
+    size: config.size,
+    color: config.color,
+    constrain: config.constrain,
+  });
+
+  return store;
+}
+
+

@@ -104,7 +104,7 @@ export class DragStore extends Forest<DragStoreValue> {
    */
   endDrag() {
     if (!this.value.isDragging || !this.value.draggedItemId) return;
-
+    console.log('endDrag');
     const itemId = this.value.draggedItemId;
     const finalX = this.value.initialItemX + this.value.deltaX;
     const finalY = this.value.initialItemY + this.value.deltaY;

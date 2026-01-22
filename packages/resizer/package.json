@@ -1,0 +1,22 @@
+{
+  "name": "@forestry-pixi/resizer",
+  "version": "1.0.0",
+  "description": "Resizer component for forestry-pixi with interactive handles",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "@wonderlandlabs/forestry4": "^4.1.10",
+    "pixi.js": "^8.15.0",
+    "zod": "^4.3.5"
+  }
+}
