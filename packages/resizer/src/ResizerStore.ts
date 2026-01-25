@@ -1,7 +1,7 @@
 import { Forest } from '@wonderlandlabs/forestry4';
 import { Container, Graphics, Rectangle, FederatedPointerEvent } from 'pixi.js';
 import { trackDrag, TrackDragResult } from './trackDrag';
-import { HandlePosition } from './types';
+import { HandlePosition, HandleMode } from './types';
 import type { Color } from './types';
 import { ImmerableRectangle } from './ImmerableRectangle';
 
@@ -12,6 +12,7 @@ export interface ResizerStoreConfig {
   size?: number;
   color?: Color;
   constrain?: boolean;
+  mode?: HandleMode;
 }
 
 /**
@@ -25,6 +26,7 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
   private size: number;
   private color: Color;
   private constrain: boolean;
+  private mode: HandleMode;
 
   // Drag state
   private dragHandle: HandlePosition | null = null;
@@ -46,6 +48,7 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
     this.size = config.size ?? 12;
     this.color = config.color ?? { r: 0.2, g: 0.6, b: 1 };
     this.constrain = config.constrain ?? false;
+    this.mode = config.mode ?? 'ONLY_CORNER';
 
     // Create handles container
     this.handlesContainer = new Container();
@@ -134,15 +137,36 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
   }
 
   /**
-   * Get handle positions (4 corners only)
+   * Get handle positions based on mode
    */
   private getHandlePositions(): HandlePosition[] {
-    return [
-      HandlePosition.TOP_LEFT,
-      HandlePosition.TOP_RIGHT,
-      HandlePosition.BOTTOM_LEFT,
-      HandlePosition.BOTTOM_RIGHT,
-    ];
+    switch (this.mode) {
+      case 'ONLY_CORNER':
+        return [
+          HandlePosition.TOP_LEFT,
+          HandlePosition.TOP_RIGHT,
+          HandlePosition.BOTTOM_LEFT,
+          HandlePosition.BOTTOM_RIGHT,
+        ];
+      case 'ONLY_EDGE':
+        return [
+          HandlePosition.TOP_CENTER,
+          HandlePosition.MIDDLE_RIGHT,
+          HandlePosition.BOTTOM_CENTER,
+          HandlePosition.MIDDLE_LEFT,
+        ];
+      case 'EDGE_AND_CORNER':
+        return [
+          HandlePosition.TOP_LEFT,
+          HandlePosition.TOP_CENTER,
+          HandlePosition.TOP_RIGHT,
+          HandlePosition.MIDDLE_RIGHT,
+          HandlePosition.BOTTOM_RIGHT,
+          HandlePosition.BOTTOM_CENTER,
+          HandlePosition.BOTTOM_LEFT,
+          HandlePosition.MIDDLE_LEFT,
+        ];
+    }
   }
 
   /**
@@ -164,12 +188,20 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
     switch (position) {
       case HandlePosition.TOP_LEFT:
         return { x, y };
+      case HandlePosition.TOP_CENTER:
+        return { x: x + width / 2, y };
       case HandlePosition.TOP_RIGHT:
         return { x: x + width, y };
-      case HandlePosition.BOTTOM_LEFT:
-        return { x, y: y + height };
+      case HandlePosition.MIDDLE_RIGHT:
+        return { x: x + width, y: y + height / 2 };
       case HandlePosition.BOTTOM_RIGHT:
         return { x: x + width, y: y + height };
+      case HandlePosition.BOTTOM_CENTER:
+        return { x: x + width / 2, y: y + height };
+      case HandlePosition.BOTTOM_LEFT:
+        return { x, y: y + height };
+      case HandlePosition.MIDDLE_LEFT:
+        return { x, y: y + height / 2 };
       default:
         return { x, y };
     }
@@ -186,6 +218,12 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
       case HandlePosition.TOP_RIGHT:
       case HandlePosition.BOTTOM_LEFT:
         return 'nesw-resize';
+      case HandlePosition.TOP_CENTER:
+      case HandlePosition.BOTTOM_CENTER:
+        return 'ns-resize';
+      case HandlePosition.MIDDLE_LEFT:
+      case HandlePosition.MIDDLE_RIGHT:
+        return 'ew-resize';
       default:
         return 'default';
     }
@@ -250,19 +288,33 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
         newRect.width -= scaledDeltaX;
         newRect.height -= scaledDeltaY;
         break;
+      case HandlePosition.TOP_CENTER:
+        newRect.y += scaledDeltaY;
+        newRect.height -= scaledDeltaY;
+        break;
       case HandlePosition.TOP_RIGHT:
         newRect.y += scaledDeltaY;
         newRect.width += scaledDeltaX;
         newRect.height -= scaledDeltaY;
+        break;
+      case HandlePosition.MIDDLE_RIGHT:
+        newRect.width += scaledDeltaX;
+        break;
+      case HandlePosition.BOTTOM_RIGHT:
+        newRect.width += scaledDeltaX;
+        newRect.height += scaledDeltaY;
+        break;
+      case HandlePosition.BOTTOM_CENTER:
+        newRect.height += scaledDeltaY;
         break;
       case HandlePosition.BOTTOM_LEFT:
         newRect.x += scaledDeltaX;
         newRect.width -= scaledDeltaX;
         newRect.height += scaledDeltaY;
         break;
-      case HandlePosition.BOTTOM_RIGHT:
-        newRect.width += scaledDeltaX;
-        newRect.height += scaledDeltaY;
+      case HandlePosition.MIDDLE_LEFT:
+        newRect.x += scaledDeltaX;
+        newRect.width -= scaledDeltaX;
         break;
     }
 

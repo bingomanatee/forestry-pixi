@@ -27,3 +27,5 @@ export enum HandlePosition {
   BOTTOM_CENTER = 'bottom-center',
   BOTTOM_RIGHT = 'bottom-right',
 }
+
+export type HandleMode = 'ONLY_EDGE' | 'ONLY_CORNER' | 'EDGE_AND_CORNER';

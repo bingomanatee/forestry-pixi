@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/html';
 import { Application, Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { enableHandles } from './enableHandles';
 import { ResizerStore } from './ResizerStore';
+import type { HandleMode } from './types';
 
 interface ResizerArgs {
   constrain: boolean;
@@ -35,11 +36,11 @@ const meta: Meta<ResizerArgs> = {
     }).then(() => {
       wrapper.appendChild(app.canvas);
 
-      // Create boxes with different colors
+      // Create boxes with different colors and modes
       const boxes = [
-        { x: 100, y: 100, width: 150, height: 100, color: 0xff6b6b, label: 'Red Box' },
-        { x: 300, y: 150, width: 120, height: 120, color: 0x4ecdc4, label: 'Cyan Box' },
-        { x: 500, y: 200, width: 180, height: 80, color: 0xffe66d, label: 'Yellow Box' },
+        { x: 100, y: 100, width: 150, height: 100, color: 0xff6b6b, label: 'Red Box (ONLY_CORNER)', mode: 'ONLY_CORNER' as HandleMode },
+        { x: 300, y: 150, width: 120, height: 120, color: 0x4ecdc4, label: 'Cyan Box (ONLY_EDGE)', mode: 'ONLY_EDGE' as HandleMode },
+        { x: 500, y: 200, width: 180, height: 80, color: 0xffe66d, label: 'Yellow Box (EDGE_AND_CORNER)', mode: 'EDGE_AND_CORNER' as HandleMode },
       ];
 
       let activeControls: ResizerStore | null = null;
@@ -91,6 +92,7 @@ const meta: Meta<ResizerArgs> = {
             size: args.handleSize,
             color: { r: 0.2, g: 0.6, b: 1 },
             constrain: args.constrain,
+            mode: boxConfig.mode,
           });
 
           // Subscribe to rectangle updates

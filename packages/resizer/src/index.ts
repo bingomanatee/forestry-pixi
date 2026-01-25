@@ -10,6 +10,7 @@ export {
 
 export type {
   Color,
+  HandleMode,
 } from './types';
 
 export type {
