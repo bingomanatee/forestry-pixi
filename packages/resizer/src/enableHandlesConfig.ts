@@ -1,10 +1,14 @@
-import { Rectangle } from "pixi.js";
+import { Application, Container, Rectangle } from "pixi.js";
 import { Color, HandleMode } from "./types";
 
 /**
  * Configuration for enableHandles
  */
 export interface EnableHandlesConfig {
+    /** PixiJS Application instance (required for ticker integration) */
+    app: Application;
+    /** Optional callback to render content based on new rectangle size */
+    drawRect?: (rect: Rectangle, container: Container) => void;
     /** Callback when drag is released */
     onRelease?: (rect: Rectangle) => void;
     /** Size of handles in pixels (default: 12) */

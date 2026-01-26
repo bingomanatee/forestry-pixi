@@ -14,11 +14,13 @@ import {ResizerStore} from "./ResizerStore";
 export function enableHandles(
   container: Container,
   rect: Rectangle,
-  config: EnableHandlesConfig = {}
+  config: EnableHandlesConfig
 ): ResizerStore {
   const store = new ResizerStore({
     container,
     rect,
+    app: config.app,
+    drawRect: config.drawRect,
     onRelease: config.onRelease,
     size: config.size,
     color: config.color,

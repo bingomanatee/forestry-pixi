@@ -104,12 +104,23 @@ export abstract class TickerForest<T> extends Forest<T> {
     }
 
     /**
+     * Trigger an initial resolve on the next ticker frame.
+     * Subclasses should call this in their constructor after initialization
+     * to ensure initial PixiJS operations are performed.
+     */
+    protected kickoff(): void {
+        this.queueResolve();
+    }
+
+    /**
      * Internal ticker callback that calls resolve and clears dirty flags.
      * @private
      */
     private onTick (){
-        this.resolve();
-        this.clearDirty();
+        if (this.isDirty()) {
+            this.resolve();
+            this.clearDirty();
+        }
         this.#resolveQueued = false;
     };
 

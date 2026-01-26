@@ -98,6 +98,17 @@ const meta: Meta<ResizerArgs> = {
           // Enable handles on this box using full rect coordinates
           const rect = new Rectangle(boxConfig.x, boxConfig.y, boxConfig.width, boxConfig.height);
           activeControls = enableHandles(boxContainer, rect, {
+            app,
+            drawRect: (newRect, container) => {
+              // Update box graphic using full rect coordinates
+              boxGraphic.clear();
+              boxGraphic.rect(newRect.x, newRect.y, newRect.width, newRect.height);
+              boxGraphic.fill({ color: boxConfig.color, alpha: 0.7 });
+              boxGraphic.stroke({ color: 0x333333, width: 2 });
+
+              // Update label position
+              labelText.position.set(newRect.x + newRect.width / 2, newRect.y + newRect.height / 2);
+            },
             onRelease: (finalRect) => {
               console.log(`${boxConfig.label} resized to:`, finalRect);
             },
@@ -105,18 +116,6 @@ const meta: Meta<ResizerArgs> = {
             color: { r: 0.2, g: 0.6, b: 1 },
             constrain: args.constrain,
             mode: boxConfig.mode,
-          });
-
-          // Subscribe to rectangle updates
-          activeControls.subscribe((newRect) => {
-            // Update box graphic using full rect coordinates
-            boxGraphic.clear();
-            boxGraphic.rect(newRect.x, newRect.y, newRect.width, newRect.height);
-            boxGraphic.fill({ color: boxConfig.color, alpha: 0.7 });
-            boxGraphic.stroke({ color: 0x333333, width: 2 });
-
-            // Update label position
-            labelText.position.set(newRect.x + newRect.width / 2, newRect.y + newRect.height / 2);
           });
         });
       });

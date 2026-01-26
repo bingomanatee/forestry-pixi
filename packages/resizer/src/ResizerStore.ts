@@ -1,5 +1,6 @@
-import { Forest } from '@wonderlandlabs/forestry4';
-import { Container, Graphics, Rectangle, FederatedPointerEvent } from 'pixi.js';
+import { TickerForest } from '@forestry-pixi/root-container';
+import { Container, Graphics, Rectangle, FederatedPointerEvent, Application } from 'pixi.js';
+import { distinctUntilChanged } from 'rxjs';
 import { trackDrag, TrackDragResult } from './trackDrag';
 import { HandlePosition, HandleMode } from './types';
 import type { Color } from './types';
@@ -8,6 +9,8 @@ import { ImmerableRectangle } from './ImmerableRectangle';
 export interface ResizerStoreConfig {
   container: Container;
   rect: Rectangle;
+  app: Application;
+  drawRect?: (rect: Rectangle, container: Container) => void;
   onRelease?: (rect: Rectangle) => void;
   size?: number;
   color?: Color;
@@ -16,12 +19,21 @@ export interface ResizerStoreConfig {
 }
 
 /**
- * Forestry-based state store for resize handles.
- * The value is an ImmerableRectangle representing the rectangle being resized.
+ * State value for ResizerStore
  */
-export class ResizerStore extends Forest<ImmerableRectangle> {
+export interface ResizerStoreValue {
+  rect: ImmerableRectangle;
+  dirty: boolean;
+}
+
+/**
+ * Forestry-based state store for resize handles.
+ * Uses TickerForest to synchronize PixiJS operations with the ticker loop.
+ */
+export class ResizerStore extends TickerForest<ResizerStoreValue> {
   private container: Container;
   private stage: Container;
+  private drawRect?: (rect: Rectangle, container: Container) => void;
   private onRelease?: (rect: Rectangle) => void;
   private size: number;
   private color: Color;
@@ -39,11 +51,18 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
 
   constructor(config: ResizerStoreConfig) {
     // Convert PixiJS Rectangle to ImmerableRectangle for Immer compatibility
-    super({
-      value: ImmerableRectangle.fromPixiRectangle(config.rect)
-    });
+    super(
+      {
+        value: {
+          rect: ImmerableRectangle.fromPixiRectangle(config.rect),
+          dirty: false
+        }
+      },
+      config.app
+    );
 
     this.container = config.container;
+    this.drawRect = config.drawRect;
     this.onRelease = config.onRelease;
     this.size = config.size ?? 12;
     this.color = config.color ?? { r: 0.2, g: 0.6, b: 1 };
@@ -61,6 +80,22 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
     }
     parent.addChild(this.handlesContainer);
 
+    // Watch for rect changes and queue resolve when rect values change
+    let lastRect = this.value.rect;
+    this.subscribe((value) => {
+      const currentRect = value.rect;
+      // Only queue resolve if rect values actually changed
+      if (
+        currentRect.x !== lastRect.x ||
+        currentRect.y !== lastRect.y ||
+        currentRect.width !== lastRect.width ||
+        currentRect.height !== lastRect.height
+      ) {
+        lastRect = currentRect;
+        this.queueResolve();
+      }
+    });
+
     // Find the stage (root container) for global event listeners
     this.stage = parent;
     while (this.stage.parent) {
@@ -77,7 +112,43 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
 
     // Create handles
     this.createHandles();
+
+    // Trigger initial resolve to position handles and call drawRect
+    this.mutate((draft) => {
+      draft.dirty = true;
+    });
+    this.kickoff();
   }
+
+  // TickerForest abstract methods implementation
+  protected isDirty(): boolean {
+    return this.value.dirty;
+  }
+
+  protected clearDirty(): void {
+    this.mutate((draft) => {
+      draft.dirty = false;
+    });
+  }
+
+  protected resolve(): void {
+    if (!this.isDirty()) return;
+
+    // Update handle positions and scales
+    this.updateHandles();
+
+    // Call the drawRect callback if provided
+    if (this.drawRect) {
+      const rect = new Rectangle(
+        this.value.rect.x,
+        this.value.rect.y,
+        this.value.rect.width,
+        this.value.rect.height
+      );
+      this.drawRect(rect, this.container);
+    }
+  }
+
 
   /**
    * Drag start handler - bound via this.$
@@ -88,7 +159,7 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
 
     this.dragHandle = position;
     // Clone the ImmerableRectangle
-    this.dragStartRect = this.value.clone();
+    this.dragStartRect = this.value.rect.clone();
   }
 
   /**
@@ -110,11 +181,11 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
       this.dragStartRect
     );
 
-    // Update state with plain object
-    this.mutate(() => newRect);
-
-    // Update handles to new positions
-    this.updateHandles();
+    // Update state with plain object and mark dirty
+    this.mutate((draft) => {
+      draft.rect = newRect;
+      draft.dirty = true;
+    });
   }
 
   /**
@@ -131,7 +202,7 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
     if (this.onRelease) {
       console.log('Calling onRelease callback');
       // Convert ImmerableRectangle to PixiJS Rectangle for callback
-      const rect = new Rectangle(this.value.x, this.value.y, this.value.width, this.value.height);
+      const rect = new Rectangle(this.value.rect.x, this.value.rect.y, this.value.rect.width, this.value.rect.height);
       this.onRelease(rect);
     }
   }
@@ -250,7 +321,7 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
    */
   private updateHandles() {
     const containerPos = this.container.getGlobalPosition();
-    const rect = this.value;
+    const rect = this.value.rect;
 
     this.handles.forEach((handle, position) => {
       const localPos = this.getHandleLocalPosition(position, rect);
@@ -352,8 +423,10 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
       this.dragTrackers.set(handle, tracker);
     });
 
-    // Initial position update
-    this.updateHandles();
+    // Initial position update - mark dirty to trigger update on next tick
+    this.mutate((draft) => {
+      draft.dirty = true;
+    });
   }
 
   /**
@@ -378,8 +451,10 @@ export class ResizerStore extends Forest<ImmerableRectangle> {
    * Programmatically set the rectangle
    */
   public setRect(rect: Rectangle) {
-    // Convert PixiJS Rectangle to ImmerableRectangle
-    this.mutate(() => ImmerableRectangle.fromPixiRectangle(rect));
-    this.updateHandles();
+    // Convert PixiJS Rectangle to ImmerableRectangle and mark dirty
+    this.mutate((draft) => {
+      draft.rect = ImmerableRectangle.fromPixiRectangle(rect);
+      draft.dirty = true;
+    });
   }
 }
