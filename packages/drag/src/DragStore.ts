@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Forest } from '@wonderlandlabs/forestry4';
+import { TickerForest } from '@forestry-pixi/ticker-forest';
+import { Application } from 'pixi.js';
 
 // Schema for drag state
 const DragStoreSchema = z.object({
@@ -13,38 +14,90 @@ const DragStoreSchema = z.object({
   deltaY: z.number().default(0),
   initialItemX: z.number().default(0),
   initialItemY: z.number().default(0),
+  isDragEnding: z.boolean().default(false),
+  dirty: z.boolean().default(false),
 });
 
 export type DragStoreValue = z.infer<typeof DragStoreSchema>;
 
 export interface DragCallbacks {
   onDragStart?: (itemId: string, x: number, y: number) => void;
-  onDrag?: (itemId: string, x: number, y: number, deltaX: number, deltaY: number) => void;
-  onDragEnd?: (itemId: string, x: number, y: number) => void;
+  onDrag?: (state: DragStoreValue) => void;
+  onDragEnd?: () => void;
 }
 
-export class DragStore extends Forest<DragStoreValue> {
+export interface DragStoreConfig {
+  app: Application;
+  callbacks?: DragCallbacks;
+}
+
+export class DragStore extends TickerForest<DragStoreValue> {
   private callbacks: DragCallbacks = {};
 
-  constructor(callbacks?: DragCallbacks) {
-    super({
-      value: {
-        isDragging: false,
-        draggedItemId: null,
-        startX: 0,
-        startY: 0,
-        currentX: 0,
-        currentY: 0,
-        deltaX: 0,
-        deltaY: 0,
-        initialItemX: 0,
-        initialItemY: 0,
+  constructor(config: DragStoreConfig) {
+    super(
+      {
+        value: {
+          isDragging: false,
+          draggedItemId: null,
+          startX: 0,
+          startY: 0,
+          currentX: 0,
+          currentY: 0,
+          deltaX: 0,
+          deltaY: 0,
+          initialItemX: 0,
+          initialItemY: 0,
+          isDragEnding: false,
+          dirty: false,
+        },
       },
-    });
+      config.app
+    );
 
-    if (callbacks) {
-      this.callbacks = callbacks;
+    if (config.callbacks) {
+      this.callbacks = config.callbacks;
     }
+
+    this.mutate((draft) => {
+      draft.dirty = true;
+    });
+    this.kickoff();
+  }
+
+  // TickerForest abstract methods implementation
+  protected isDirty(): boolean {
+    return this.value.dirty;
+  }
+
+  protected clearDirty(): void {
+    this.mutate((draft) => {
+      draft.dirty = false;
+    });
+  }
+
+  protected resolve(): void {
+    if (!this.isDirty()) return;
+
+    const state = this.value;
+
+    if (!state.draggedItemId) return;
+
+    // If dragging has ended, call onDragEnd
+    if (!state.isDragging) {
+      this.callbacks.onDragEnd?.();
+    } else {
+      // Dragging is active - call onDrag
+      // Check if this is drag start (delta is still 0)
+      if (state.deltaX === 0 && state.deltaY === 0) {
+        this.callbacks.onDragStart?.(state.draggedItemId, state.startX, state.startY);
+      } else {
+        // Ongoing drag - communicate current position
+        this.callbacks.onDrag?.(state);
+      }
+    }
+
+    this.clearDirty();
   }
 
   /**
@@ -69,9 +122,9 @@ export class DragStore extends Forest<DragStoreValue> {
       draft.deltaY = 0;
       draft.initialItemX = itemX;
       draft.initialItemY = itemY;
+      draft.dirty = true;
     });
-
-    this.callbacks.onDragStart?.(itemId, clientX, clientY);
+    this.queueResolve();
   }
 
   /**
@@ -80,23 +133,14 @@ export class DragStore extends Forest<DragStoreValue> {
   updateDrag(clientX: number, clientY: number) {
     if (!this.value.isDragging || !this.value.draggedItemId) return;
 
-    const deltaX = clientX - this.value.startX;
-    const deltaY = clientY - this.value.startY;
-
     this.mutate(draft => {
       draft.currentX = clientX;
       draft.currentY = clientY;
-      draft.deltaX = deltaX;
-      draft.deltaY = deltaY;
+      draft.deltaX = clientX - draft.startX;
+      draft.deltaY = clientY - draft.startY;
+      draft.dirty = true;
     });
-
-    this.callbacks.onDrag?.(
-      this.value.draggedItemId,
-      this.value.initialItemX + deltaX,
-      this.value.initialItemY + deltaY,
-      deltaX,
-      deltaY
-    );
+    this.queueResolve();
   }
 
   /**
@@ -104,13 +148,8 @@ export class DragStore extends Forest<DragStoreValue> {
    */
   endDrag() {
     if (!this.value.isDragging || !this.value.draggedItemId) return;
-    console.log('endDrag');
-    const itemId = this.value.draggedItemId;
-    const finalX = this.value.initialItemX + this.value.deltaX;
-    const finalY = this.value.initialItemY + this.value.deltaY;
 
-    this.callbacks.onDragEnd?.(itemId, finalX, finalY);
-
+    // Mark dragging as ended and clear drag state
     this.mutate(draft => {
       draft.isDragging = false;
       draft.draggedItemId = null;
@@ -122,7 +161,9 @@ export class DragStore extends Forest<DragStoreValue> {
       draft.deltaY = 0;
       draft.initialItemX = 0;
       draft.initialItemY = 0;
+      draft.dirty = true;
     });
+    this.queueResolve();
   }
 
   /**
@@ -140,7 +181,9 @@ export class DragStore extends Forest<DragStoreValue> {
       draft.deltaY = 0;
       draft.initialItemX = 0;
       draft.initialItemY = 0;
+      draft.dirty = true;
     });
+    this.queueResolve();
   }
 
   /**

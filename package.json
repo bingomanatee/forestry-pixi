@@ -18,8 +18,11 @@
   },
   "devDependencies": {
     "@storybook/html-vite": "^10.1.11",
+    "@types/node": "^25.0.10",
     "@vitest/coverage-v8": "4.0.17",
     "@vitest/ui": "^4.0.17",
+    "happy-dom": "^20.3.9",
+    "jsdom": "^27.4.0",
     "pixi.js": "^8.15.0",
     "storybook": "^10.1.11",
     "typescript": "^5.5.3",
