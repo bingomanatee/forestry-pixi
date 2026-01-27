@@ -24,9 +24,10 @@ const meta: Meta<WindowArgs> = {
             const container = new Container();
             const handleContainer = new Container();
             app.stage.addChild(container, handleContainer);
+            app.stage.eventMode = 'static';
             wm = new WindowsManager({container, handleContainer, app});
 
-            wm.addWindow('alpha', {
+            wm.addWindow('alpha', { id: 'alpha',
                 x: 10, y: 20, width: 500, height: 300, backgroundColor: {
                     r: 1, g: 0, b: 0
                 }

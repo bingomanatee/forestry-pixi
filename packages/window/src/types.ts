@@ -3,19 +3,19 @@ import { WINDOW_STATUS, TITLEBAR_MODE, type WindowStatus, type TitlebarMode } fr
 import type { HandleMode } from '@forestry-pixi/resizer';
 
 // Color schema for RGB values (0..1)
-export const ColorSchema = z.object({
+export const RgbColorSchema = z.object({
   r: z.number().min(0).max(1).default(1),
   g: z.number().min(0).max(1).default(1),
   b: z.number().min(0).max(1).default(1),
 });
 
-export type Color = z.infer<typeof ColorSchema>;
+export type RgbColor = z.infer<typeof RgbColorSchema>;
 
 // Titlebar configuration
 export const TitlebarConfigSchema = z.object({
   mode: z.enum([TITLEBAR_MODE.PERSISTENT, TITLEBAR_MODE.ON_HOVER]).default(TITLEBAR_MODE.PERSISTENT),
   height: z.number().min(0).default(30),
-  backgroundColor: ColorSchema.default({ r: 0.2, g: 0.2, b: 0.2 }),
+  backgroundColor: RgbColorSchema.default({ r: 0.2, g: 0.2, b: 0.2 }),
   title: z.string().default('Window'),
   showCloseButton: z.boolean().default(false),
 });
@@ -38,7 +38,7 @@ export const WindowDefSchema = z.object({
   height: z.number().min(0).default(200),
   minWidth: z.number().min(0).optional(),
   minHeight: z.number().min(0).optional(),
-  backgroundColor: ColorSchema.default({ r: 0.1, g: 0.1, b: 0.1 }),
+  backgroundColor: RgbColorSchema.default({ r: 0.1, g: 0.1, b: 0.1 }),
   titlebar: TitlebarConfigSchema.default({
     mode: TITLEBAR_MODE.PERSISTENT,
     height: 30,
@@ -46,7 +46,8 @@ export const WindowDefSchema = z.object({
     title: 'Window',
     showCloseButton: false
   }),
-  resizable: z.boolean().default(false),
+  isResizeable: z.boolean().default(false),
+  isDraggable:  z.boolean().default(false),
   resizeMode: z.string().optional() as z.ZodType<HandleMode | undefined>,
   status: WindowStatusSchema.default(WINDOW_STATUS.CLEAN),
   zIndex: z.number().default(0),
@@ -61,4 +62,3 @@ export const WindowStoreSchema = z.object({
 });
 
 export type WindowStoreValue = z.infer<typeof WindowStoreSchema>;
-

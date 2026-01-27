@@ -1,6 +1,6 @@
 # @forestry-pixi/drag
 
-Drag hook and state controller for forestry-pixi.
+Drag state controller for PixiJS in forestry-pixi.
 
 ## Installation
 
@@ -8,54 +8,35 @@ Drag hook and state controller for forestry-pixi.
 yarn add @forestry-pixi/drag
 ```
 
-## Hooks
-
-### useDrag
-
-React hook for adding drag functionality to components.
-
-```tsx
-import { useDrag } from '@forestry-pixi/drag';
-
-function DraggableComponent() {
-  const { isDragging, position, dragHandlers } = useDrag({
-    onDragStart: () => console.log('Started'),
-    onDrag: (pos) => console.log('Dragging', pos),
-    onDragEnd: () => console.log('Ended')
-  });
-
-  return (
-    <div 
-      {...dragHandlers}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor: isDragging ? 'grabbing' : 'grab'
-      }}
-    >
-      Drag me!
-    </div>
-  );
-}
-```
-
-## Controllers
+## Usage
 
 ### DragStore
 
-Forestry4-based state controller for managing drag state.
+Forestry4-based state controller for managing drag state with PixiJS.
 
 ```typescript
 import { DragStore } from '@forestry-pixi/drag';
+import { Application } from 'pixi.js';
+
+const app = new Application();
 
 const dragStore = new DragStore({
-  onDragStart: (itemId, x, y) => {
-    console.log('Drag started:', itemId, x, y);
-  },
-  onDrag: (itemId, x, y, deltaX, deltaY) => {
-    console.log('Dragging:', itemId, x, y, deltaX, deltaY);
-  },
-  onDragEnd: (itemId, x, y) => {
-    console.log('Drag ended:', itemId, x, y);
+  app,
+  callbacks: {
+    onDragStart: (itemId, x, y) => {
+      console.log('Drag started:', itemId, x, y);
+    },
+    onDrag: (state) => {
+      console.log('Dragging:', state.draggedItemId, state.deltaX, state.deltaY);
+      // Update your container position
+      const pos = dragStore.getCurrentItemPosition();
+      if (pos) {
+        container.position.set(pos.x, pos.y);
+      }
+    },
+    onDragEnd: () => {
+      console.log('Drag ended');
+    },
   },
 });
 
@@ -98,12 +79,19 @@ interface DragStoreValue {
   deltaY: number;
   initialItemX: number;
   initialItemY: number;
+  isDragEnding: boolean;
+  dirty: boolean;
 }
 
 interface DragCallbacks {
   onDragStart?: (itemId: string, x: number, y: number) => void;
-  onDrag?: (itemId: string, x: number, y: number, deltaX: number, deltaY: number) => void;
-  onDragEnd?: (itemId: string, x: number, y: number) => void;
+  onDrag?: (state: DragStoreValue) => void;
+  onDragEnd?: () => void;
+}
+
+interface DragStoreConfig {
+  app: Application;
+  callbacks?: DragCallbacks;
 }
 ```
 

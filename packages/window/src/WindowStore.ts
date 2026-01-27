@@ -1,7 +1,9 @@
 import {TickerForest} from "@forestry-pixi/ticker-forest";
 import type {WindowDef} from "./types";
-import {Color, Container, Graphics} from "pixi.js";
+import {Container, Graphics} from "pixi.js";
 import {WindowsManager} from "./WindowsManager";
+import rgbToColor from "./rgbToColor";
+import {DragStore} from "@forestry-pixi/drag";
 
 export class WindowStore extends TickerForest<WindowDef> {
 
@@ -15,12 +17,49 @@ export class WindowStore extends TickerForest<WindowDef> {
         parentContainer?.addChild(this.#root!);
     }
 
+    #dragStore?: DragStore;
+
     #refreshRoot() {
         const {x, y} = this.value;
 
         if (!this.#root) {
             this.#root = new Container({
+                eventMode: "static",
                 position: {x, y}
+            });
+
+            const self = this;
+
+            this.#dragStore = new DragStore({
+                app: this.application,
+                callbacks: {
+                    onDragStart () {
+                        console.info('drag:start')
+                    },
+                    onDrag (state)  {
+                        const pos = self.#dragStore?.getCurrentItemPosition();
+                        console.info('drag:drag', pos)
+                        // @TODO: localize?
+                        if (pos) {
+                            self.#root?.position.set(pos.x, pos.y);
+                        }
+                    },
+                    onDragEnd() {
+                        console.info('drag:end')
+                        self.#root!.cursor = 'grab';
+                    },
+                },
+            });
+
+            this.#root.on('pointerdown', (event) => {
+                event.stopPropagation();
+                self.#root!.cursor = 'grabbing';
+
+                // Start drag with current container position
+                self.#dragStore!.startDragContainer(
+                    self.value.id,
+                    event, self.#root!
+                );
             });
         } else {
             this.#root.position.set(x, y);
@@ -38,7 +77,7 @@ export class WindowStore extends TickerForest<WindowDef> {
         }
 
         this.#background.rect(0, 0, width, height)
-            .fill({backgroundColor: new Color(backgroundColor)});
+            .fill(rgbToColor(backgroundColor));
 
     }
 
