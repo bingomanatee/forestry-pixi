@@ -27,9 +27,19 @@ const meta: Meta<WindowArgs> = {
             app.stage.eventMode = 'static';
             wm = new WindowsManager({container, handleContainer, app});
 
-            wm.addWindow('alpha', { id: 'alpha',
+            wm.addWindow('alpha', {
+                id: 'alpha',
                 x: 10, y: 20, width: 500, height: 300, backgroundColor: {
                     r: 1, g: 0, b: 0
+                },
+                isDraggable: true,
+                titlebar: {
+                    title: 'foo',
+                    mode: 'onHover',
+                    height: 20,
+                    showCloseButton: false,
+                    backgroundColor: {r: 0.5, g: 0.5, b: 0.5},
+                    isVisible: false
                 }
             })
         });
