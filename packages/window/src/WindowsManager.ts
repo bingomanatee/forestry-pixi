@@ -16,7 +16,7 @@ export interface WindowsManagerConfig {
  */
 export class WindowsManager extends Forest<WindowStoreValue> {
     app: Application;
-    container: Container;
+    container!: Container;
     handleContainer?: Container;
 
     constructor(config: WindowsManagerConfig) {

@@ -1,13 +1,14 @@
 import {TickerForest} from "@forestry-pixi/ticker-forest";
 import type {WindowDef} from "./types";
-import {Container, Graphics} from "pixi.js";
+import {Application, Container, Graphics} from "pixi.js";
 import {WindowsManager} from "./WindowsManager";
 import rgbToColor from "./rgbToColor";
 import {DragStore} from "@forestry-pixi/drag";
+import {StoreParams} from "@wonderlandlabs/forestry4";
 
 export class WindowStore extends TickerForest<WindowDef> {
 
-    constructor(config, app) {
+    constructor(config: StoreParams<WindowDef>, app: Application) {
         super(config, app);
     }
 
@@ -34,18 +35,15 @@ export class WindowStore extends TickerForest<WindowDef> {
                 app: this.application,
                 callbacks: {
                     onDragStart () {
-                        console.info('drag:start')
                     },
                     onDrag (state)  {
                         const pos = self.#dragStore?.getCurrentItemPosition();
-                        console.info('drag:drag', pos)
                         // @TODO: localize?
                         if (pos) {
                             self.#root?.position.set(pos.x, pos.y);
                         }
                     },
                     onDragEnd() {
-                        console.info('drag:end')
                         self.#root!.cursor = 'grab';
                     },
                 },

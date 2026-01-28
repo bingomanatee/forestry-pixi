@@ -33,8 +33,6 @@ export interface DragStoreConfig {
 export class DragStore extends TickerForest<DragStoreValue> {
     private callbacks: DragCallbacks = {};
     private app: Application;
-    private onDragMove?: (event: FederatedPointerEvent) => void;
-    private onDragEnd?: () => void;
 
     constructor(config: DragStoreConfig) {
         super(
@@ -116,26 +114,6 @@ export class DragStore extends TickerForest<DragStoreValue> {
     }
 
     startDragContainer(itemId: string, event: FederatedPointerEvent, target: {position: Point}) {
-        // Remove any existing listeners first
-        this.removeEventListeners();
-
-        // Create event handlers
-        this.onDragMove = (moveEvent: FederatedPointerEvent) => {
-            this.updateDrag(moveEvent.global.x, moveEvent.global.y);
-        };
-
-        this.onDragEnd = () => {
-            this.endDrag();
-            this.removeEventListeners();
-        };
-
-        // Attach listeners to stage
-        this.app.stage.eventMode = 'static';
-        this.app.stage.on('pointermove', this.onDragMove);
-        this.app.stage.on('pointerup', this.onDragEnd);
-        this.app.stage.on('pointerupoutside', this.onDragEnd);
-
-        // Start the drag
         this.startDrag(
             itemId,
             event.global.x,
@@ -178,6 +156,23 @@ export class DragStore extends TickerForest<DragStoreValue> {
             draft.dirty = true;
         });
         this.queueResolve();
+
+        const self = this;
+        // Create event handlers
+        const onDragMove = (moveEvent: FederatedPointerEvent) => {
+            self.updateDrag(moveEvent.global.x, moveEvent.global.y);
+        };
+
+        const onDragEnd = () => {
+            self.endDrag();
+            self.removeEventListeners();
+        };
+
+        // Attach listeners to stage
+        this.app.stage.eventMode = 'static';
+        this.app.stage.on('pointermove', onDragMove);
+        this.app.stage.on('pointerup', onDragEnd);
+        this.app.stage.on('pointerupoutside', onDragEnd);
     }
 
     /**
