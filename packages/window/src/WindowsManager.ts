@@ -104,13 +104,32 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         branch.application = this.app;
         branch.handlesContainer = this.handlesContainer; // Pass shared handles container
         branch.kickoff();
+
+        // Add content container to content map
+        this.#contentMap.set(key, branch.contentContainer);
+
         return branch;
     }
 
     #windowsBranches = new Map<string, WindowStore>();
+    #contentMap = new Map<string, Container>();
 
     windowBranch(id: string) {
         return this.#windowsBranches.get(id);
+    }
+
+    /**
+     * Get the content container for a specific window
+     */
+    getContentContainer(id: string): Container | undefined {
+        return this.#contentMap.get(id);
+    }
+
+    /**
+     * Get all content containers
+     */
+    get contentMap(): ReadonlyMap<string, Container> {
+        return this.#contentMap;
     }
 
     #flattenZIndices(): ZIndexData[] {
@@ -153,6 +172,8 @@ export class WindowsManager extends Forest<WindowStoreValue> {
             this.#windowsBranches.get(id)?.cleanup();
             this.#windowsBranches.delete(id);
         }
+        // Remove from content map
+        this.#contentMap.delete(id);
     }
 
     /**

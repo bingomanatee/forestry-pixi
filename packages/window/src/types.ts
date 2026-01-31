@@ -1,7 +1,10 @@
 import {z} from 'zod';
-import {TITLEBAR_MODE, WINDOW_STATUS} from './constants';
+import {DIMENSION_TYPE, LOAD_STATUS, TITLEBAR_MODE, WINDOW_STATUS} from './constants';
 import type {HandleMode} from '@forestry-pixi/resizer';
 
+export const LoadStateSchema = z.enum([LOAD_STATUS.START, LOAD_STATUS.LOADED, LOAD_STATUS.ERROR]);
+
+export const DimensionTypeSchema = z.enum([DIMENSION_TYPE.SIZE, DIMENSION_TYPE.SCALE]);
 // Color schema for RGB values (0..1)
 export const RgbColorSchema = z.object({
     r: z.number().min(0).max(1).default(1),
@@ -10,6 +13,11 @@ export const RgbColorSchema = z.object({
 });
 
 export type RgbColor = z.infer<typeof RgbColorSchema>;
+
+export const PointSchema = z.object({
+    x: z.number().default(0),
+    y: z.number().default(0),
+});
 
 // Titlebar configuration
 export const TitlebarConfigSchema = z.object({
@@ -37,13 +45,16 @@ export const WindowStatusSchema = z.enum([
 export const RGB_BLACK = {r: 0, g: 0, b: 0};
 export const RGB_WHITE = {r: 1, g: 1, b: 1}
 
-// Window definition schema
-export const WindowDefSchema = z.object({
-    id: z.string(),
+export const RectSchema = z.object({
     x: z.number().default(0),
     y: z.number().default(0),
     width: z.number().min(0).default(200),
     height: z.number().min(0).default(200),
+});
+
+// Window definition schema
+export const WindowDefSchema = z.object({
+    id: z.string(),
     minWidth: z.number().min(0).optional(),
     minHeight: z.number().min(0).optional(),
     backgroundColor: RgbColorSchema.default({r: 0.1, g: 0.1, b: 0.1}),
@@ -56,15 +67,17 @@ export const WindowDefSchema = z.object({
         fontSize: 14,
         textColor: RGB_BLACK,
         showCloseButton: false,
-        isVisible: true
+        isVisible: true,
+        isDirty: true
     }),
     isResizeable: z.boolean().default(false),
     isDraggable: z.boolean().default(false),
     resizeMode: z.string().optional() as z.ZodType<HandleMode | undefined>,
     status: WindowStatusSchema.default(WINDOW_STATUS.CLEAN),
     zIndex: z.number().default(0),
-    isDirty: z.boolean().default(true)
-});
+    isDirty: z.boolean().default(true),
+    contentClickable: z.boolean().default(false)
+}).merge(RectSchema)
 
 export type WindowDef = z.infer<typeof WindowDefSchema>;
 
@@ -83,3 +96,18 @@ export const ZIndexDataSchema = z.object({
 })
 
 export type ZIndexData = z.infer<typeof ZIndexDataSchema>;
+
+export const ImageSpriteSchema = z.object({
+    url: z.string(),
+    id: z.string().optional(),
+    x: z.number().default(0),
+    y: z.number().default(0),
+    dimension: PointSchema.default({ x: 1, y: 1 }),
+    dimensionType: DimensionTypeSchema.default(DIMENSION_TYPE.SCALE),
+    mask: RectSchema.optional(),
+    loadState: LoadStateSchema.optional(),
+});
+
+export type ImageSpriteProps = z.infer<typeof ImageSpriteSchema>;
+
+export type Point = z.infer<typeof PointSchema>;

@@ -15,9 +15,15 @@ export class WindowStore extends TickerForest<WindowDef> {
     // Pixi components - created in property definitions
     #rootContainer: Container = new Container({
         eventMode: "static",
-        position: {x: 0, y: 0}
+        position: {x: 0, y: 0},
+        sortableChildren: true  // Enable zIndex sorting
     });
     #background: Graphics = new Graphics();
+    #contentContainer: Container = new Container({
+        eventMode: "static",
+        position: {x: 0, y: 0}
+    });
+    #contentMask: Graphics = new Graphics();
 
     constructor(config: StoreParams<WindowDef>, app: Application) {
         super(config, app);
@@ -67,6 +73,7 @@ export class WindowStore extends TickerForest<WindowDef> {
         if (!this.#rootContainer.parent && parentContainer) {
             parentContainer.addChild(this.#rootContainer);
         }
+        this.#refreshContentContainer();
         this.#refreshTitlebar();
         this.#refreshResizer(handlesContainer);
     }
@@ -133,13 +140,47 @@ export class WindowStore extends TickerForest<WindowDef> {
 
         // Add to container if not already added
         if (!this.#background.parent) {
-            this.#rootContainer.addChildAt(this.#background, 0);
+            this.#rootContainer.addChild(this.#background);
+            this.#background.zIndex = 0;  // Background layer
         }
 
         // Update graphics
         this.#background.clear();
         this.#background.rect(0, 0, width, height)
             .fill(rgbToColor(backgroundColor));
+    }
+
+    #refreshContentContainer() {
+        const {width, height, contentClickable} = this.value;
+
+        // Add content container if not already added
+        if (!this.#contentContainer.parent) {
+            this.#rootContainer.addChild(this.#contentContainer);
+            this.#contentContainer.zIndex = 1;  // Content layer (above background, below titlebar)
+        }
+
+        // Position content container at 0,0 (titlebar will overlap)
+        this.#contentContainer.position.set(0, 0);
+
+        // Set event mode based on contentClickable
+        this.#contentContainer.eventMode = contentClickable ? 'static' : 'none';
+
+        this.#refreshContentMask();
+    }
+
+    #refreshContentMask() {
+        const {width, height} = this.value;
+        // Update content mask - simple rectangle matching window dimensions
+        if (!this.#contentMask.parent) {
+            this.#rootContainer.addChild(this.#contentMask);
+        }
+
+        this.#contentMask.clear();
+        this.#contentMask.rect(0, 0, width, height)
+            .fill(0xffffff); // Color doesn't matter for masks
+
+        // Apply mask to content container
+        this.#contentContainer.mask = this.#contentMask;
     }
 
     #tbKicked = false;
@@ -214,6 +255,13 @@ export class WindowStore extends TickerForest<WindowDef> {
         return this.#rootContainer;
     }
 
+    /**
+     * Get the content container for this window (for adding custom content)
+     */
+    get contentContainer(): Container {
+        return this.#contentContainer;
+    }
+
     protected isDirty(): boolean {
         return this.value.isDirty;
     }
@@ -254,6 +302,11 @@ export class WindowStore extends TickerForest<WindowDef> {
             this.#resizerStore.removeHandles();
             this.#resizerStore.cleanup();
             this.#resizerStore = undefined;
+        }
+
+        // Cleanup content mask
+        if (this.#contentMask) {
+            this.#contentMask.destroy();
         }
 
         // Cleanup containers

@@ -18,7 +18,8 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
     // Pixi components - created in property definitions
     #container: Container = new Container({
         label: 'titlebar',
-        position: {x: 0, y: 0}
+        position: {x: 0, y: 0},
+        sortableChildren: true  // Enable zIndex sorting
     });
     #contentContainer: Container = new Container({
         x: 0,
@@ -125,6 +126,8 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
         // Add to parent if not already added
         if (!this.#container.parent) {
             this.parentContainer?.addChild(this.#container);
+            // Use zIndex to ensure titlebar is above content (background=0, content=1, titlebar=2)
+            this.#container.zIndex = 2;
         }
 
         // Add content container if not already added
@@ -147,7 +150,8 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
 
         // Add to container if not already added
         if (!this.#background.parent) {
-            this.#container.addChildAt(this.#background, 0);
+            this.#container.addChild(this.#background);
+            this.#background.zIndex = 0;  // Background layer
         }
 
         // Update graphics
@@ -178,6 +182,7 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
         // Add to content container if not already added
         if (!this.#titleText.parent) {
             this.#contentContainer.addChild(this.#titleText);
+            this.#titleText.zIndex = 1;  // Above background
         }
 
         // Update text properties

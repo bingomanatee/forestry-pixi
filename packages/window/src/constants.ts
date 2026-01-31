@@ -13,3 +13,18 @@ export const TITLEBAR_MODE = {
 
 export type TitlebarMode = (typeof TITLEBAR_MODE)[keyof typeof TITLEBAR_MODE];
 
+
+export const LOAD_STATUS  = {
+  START: 'start',
+  LOADED: 'loaded',
+  ERROR: 'error'
+} as const;
+
+export type LoadStatus = (typeof LOAD_STATUS)[keyof typeof LOAD_STATUS];
+
+export const DIMENSION_TYPE = {
+  SIZE: 'size',
+  SCALE: 'scale'
+} as const;
+
+export type DimensionType = (typeof DIMENSION_TYPE)[keyof typeof DIMENSION_TYPE];
