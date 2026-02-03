@@ -1,0 +1,21 @@
+{
+  "name": "@forestry-pixi/style-tree",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Hierarchical style matching system with noun paths and state-based selection",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && (rm -f dist/**/*.test.js dist/**/*.test.d.ts 2>/dev/null || true)",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3",
+    "vitest": "^4.0.17"
+  },
+  "dependencies": {
+    "zod": "^4.3.5"
+  }
+}
