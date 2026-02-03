@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Sprite } from 'pixi.js';
+import type { StyleTree } from '@forestry-pixi/style-tree';
 
 // RGB Color schema (0..1 range)
 export const RgbColorSchema = z.object({
@@ -122,104 +123,16 @@ export const ToolbarButtonConfigSchema = z.object({
 
 export type ToolbarButtonConfig = z.infer<typeof ToolbarButtonConfigSchema>;
 
-// Default button properties schema
-export const ButtonDefaultsSchema = z.object({
-  iconSize: z.number().min(1).default(32),
-  padding: PaddingSchema.default({ x: 4, y: 4 }),
-  appearance: ButtonAppearanceSchema.default({
-    base: {
-      stroke: {
-        color: { r: 0.5, g: 0.5, b: 0.5 },
-        alpha: 1,
-        width: 2,
-      },
-      iconAlpha: 1,
-    },
-    hover: {
-      stroke: {
-        color: { r: 0.7, g: 0.7, b: 0.7 },
-        alpha: 1,
-        width: 2,
-      },
-      iconAlpha: 1,
-    },
-    disabled: {
-      stroke: {
-        color: { r: 0.3, g: 0.3, b: 0.3 },
-        alpha: 0.5,
-        width: 2,
-      },
-      fill: {
-        color: { r: 0.9, g: 0.9, b: 0.9 },
-        alpha: 0.3,
-      },
-      iconAlpha: 0.5,
-    },
-  }),
-  labelConfig: LabelConfigSchema.default({
-    base: {
-      color: { r: 0, g: 0, b: 0 },
-      alpha: 0.5,
-    },
-    hover: {
-      color: { r: 0, g: 0, b: 0 },
-      alpha: 1,
-    },
-    fontSize: 12,
-    padding: 4,
-  }),
-});
-
-export type ButtonDefaults = z.infer<typeof ButtonDefaultsSchema>;
-
 // Toolbar configuration schema
+// Note: Button styling is now handled entirely by StyleTree
 export const ToolbarConfigSchema = z.object({
   buttons: z.array(ToolbarButtonConfigSchema).default([]),
   spacing: z.number().min(0).default(8),
   orientation: z.enum(['horizontal', 'vertical']).default('horizontal'),
-  buttonDefaults: ButtonDefaultsSchema.default({
-    iconSize: 32,
-    padding: { x: 4, y: 4 },
-    appearance: {
-      base: {
-        stroke: {
-          color: { r: 0.5, g: 0.5, b: 0.5 },
-          alpha: 1,
-          width: 2,
-        },
-      },
-      hover: {
-        stroke: {
-          color: { r: 0.7, g: 0.7, b: 0.7 },
-          alpha: 1,
-          width: 2,
-        },
-      },
-      disabled: {
-        stroke: {
-          color: { r: 0.3, g: 0.3, b: 0.3 },
-          alpha: 0.5,
-          width: 2,
-        },
-        fill: {
-          color: { r: 0.9, g: 0.9, b: 0.9 },
-          alpha: 0.3,
-        },
-      },
-    },
-    labelConfig: {
-      base: {
-        color: { r: 0, g: 0, b: 0 },
-        alpha: 0.5,
-      },
-      hover: {
-        color: { r: 0, g: 0, b: 0 },
-        alpha: 1,
-      },
-      fontSize: 12,
-      padding: 4,
-    },
-  }),
+  // Optional StyleTree for custom styling - if provided, replaces default styles entirely
+  style: z.custom<StyleTree>().optional(),
+  // Optional bitmap font name for labels (must be pre-loaded via Assets.load)
+  bitmapFont: z.string().optional(),
 });
 
 export type ToolbarConfig = z.infer<typeof ToolbarConfigSchema>;

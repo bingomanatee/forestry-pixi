@@ -1,4 +1,5 @@
-import { Container, Graphics, Sprite, Text, Application } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, BitmapText, Application } from 'pixi.js';
+import type { StyleTree } from '@forestry-pixi/style-tree';
 import type { ToolbarButtonConfig, RgbColor } from './types';
 import { ToolbarButtonStore } from './ToolbarButtonStore';
 
@@ -13,13 +14,6 @@ function rgbToColor(rgb: RgbColor): number {
 }
 
 /**
- * Converts RGB color object (0..1) to hex color number with alpha
- */
-function rgbToColorWithAlpha(rgb: RgbColor, alpha: number): number {
-  return rgbToColor(rgb);
-}
-
-/**
  * ToolbarButton - A button with an icon sprite, configurable padding, border, and hover effects
  */
 export class ToolbarButton {
@@ -27,10 +21,10 @@ export class ToolbarButton {
   private background: Graphics;
   private border: Graphics;
   private sprite: Sprite;
-  private labelText?: Text;
+  private labelText?: Text | BitmapText;
   private store: ToolbarButtonStore;
 
-  constructor(config: ToolbarButtonConfig, app: Application) {
+  constructor(config: ToolbarButtonConfig, app: Application, styleTree: StyleTree, bitmapFontName?: string) {
     // Create container
     this.container = new Container({
       label: `ToolbarButton-${config.id}`,
@@ -51,25 +45,45 @@ export class ToolbarButton {
     this.sprite.anchor.set(0.5);
     this.container.addChild(this.sprite);
 
-    // Create label if provided
+    // Create label if provided - get initial styles from StyleTree
     if (config.label) {
-      this.labelText = new Text({
-        text: config.label,
-        style: {
-          fontSize: config.labelConfig!.fontSize,
-          fill: rgbToColor(config.labelConfig!.base.color),
-          align: 'center',
-        },
-      });
-      this.labelText.anchor.set(0.5, 0);
-      this.labelText.alpha = config.labelConfig!.base.alpha;
+      const fontSize = styleTree.match({ nouns: ['toolbar', 'label', 'fontSize'], states: [] }) ?? 12;
+      const labelColor = styleTree.match({ nouns: ['toolbar', 'label', 'color'], states: [] }) ?? { r: 0, g: 0, b: 0 };
+      const labelAlpha = styleTree.match({ nouns: ['toolbar', 'label', 'alpha'], states: [] }) ?? 0.5;
+
+      if (bitmapFontName) {
+        // Use BitmapText when a bitmap font is provided
+        this.labelText = new BitmapText({
+          text: config.label,
+          style: {
+            fontFamily: bitmapFontName,
+            fontSize,
+          },
+        });
+        this.labelText.anchor.set(0.5, 0);
+        this.labelText.tint = rgbToColor(labelColor);
+        this.labelText.alpha = labelAlpha;
+      } else {
+        // Use regular Text
+        this.labelText = new Text({
+          text: config.label,
+          style: {
+            fontSize,
+            fill: rgbToColor(labelColor),
+            align: 'center',
+          },
+        });
+        this.labelText.anchor.set(0.5, 0);
+        this.labelText.alpha = labelAlpha;
+      }
       this.container.addChild(this.labelText);
     }
 
-    // Create store with all PixiJS objects
+    // Create store with all PixiJS objects and StyleTree
     this.store = new ToolbarButtonStore(
       config,
       app,
+      styleTree,
       this.container,
       this.background,
       this.border,
@@ -131,39 +145,46 @@ export class ToolbarButton {
    * Get the width of this button
    */
   getWidth(): number {
-    const { iconSize, padding } = this.store.value;
+    const iconSize = this.store.getIconSize();
+    const padding = this.store.getPadding();
     const textureWidth = this.sprite.texture.width;
     const textureHeight = this.sprite.texture.height;
-    const scale = iconSize! / Math.max(textureWidth, textureHeight);
+    const scale = iconSize / Math.max(textureWidth, textureHeight);
     const spriteWidth = textureWidth * scale;
-    return spriteWidth + padding!.x * 2;
+    return spriteWidth + padding.x * 2;
   }
 
   /**
    * Get the height of this button (including label if present)
    */
   getHeight(): number {
-    const { iconSize, padding, labelConfig } = this.store.value;
+    const iconSize = this.store.getIconSize();
+    const padding = this.store.getPadding();
     const textureWidth = this.sprite.texture.width;
     const textureHeight = this.sprite.texture.height;
-    const scale = iconSize! / Math.max(textureWidth, textureHeight);
+    const scale = iconSize / Math.max(textureWidth, textureHeight);
     const spriteHeight = textureHeight * scale;
-    let height = spriteHeight + padding!.y * 2;
+    let height = spriteHeight + padding.y * 2;
 
     // Add label height if present
-    if (this.labelText && labelConfig) {
-      height += labelConfig.padding + labelConfig.fontSize;
+    if (this.labelText) {
+      const labelPadding = this.store.getLabelPadding();
+      const labelFontSize = this.store.getLabelFontSize();
+      height += labelPadding + labelFontSize;
     }
 
     return height;
   }
 
   /**
-   * Update button configuration
+   * Update button configuration (only supports id, label, onClick, isDisabled)
    */
-  updateConfig(config: Partial<ToolbarButtonConfig>): void {
+  updateConfig(config: Partial<Pick<ToolbarButtonConfig, 'id' | 'label' | 'onClick' | 'isDisabled'>>): void {
     this.store.mutate((draft) => {
-      Object.assign(draft, config);
+      if (config.id !== undefined) draft.id = config.id;
+      if (config.label !== undefined) draft.label = config.label;
+      if (config.onClick !== undefined) draft.onClick = config.onClick;
+      if (config.isDisabled !== undefined) draft.isDisabled = config.isDisabled;
       draft.isDirty = true;
     });
     this.store.queueResolve();

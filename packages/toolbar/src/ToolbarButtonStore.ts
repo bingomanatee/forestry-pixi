@@ -1,8 +1,14 @@
 import { TickerForest } from '@forestry-pixi/ticker-forest';
-import type { Application, Container, Graphics, Sprite, Text } from 'pixi.js';
+import type { StyleTree } from '@forestry-pixi/style-tree';
+import type { Application, Container, Graphics, Sprite, Text, BitmapText } from 'pixi.js';
 import type { ToolbarButtonConfig, RgbColor } from './types';
 
-interface ToolbarButtonState extends ToolbarButtonConfig {
+interface ToolbarButtonState {
+  id: string;
+  sprite: Sprite;
+  label?: string;
+  onClick?: () => void;
+  isDisabled: boolean;
   isHovered: boolean;
   isDirty: boolean;
 }
@@ -25,21 +31,27 @@ export class ToolbarButtonStore extends TickerForest<ToolbarButtonState> {
   private background: Graphics;
   private border: Graphics;
   private sprite: Sprite;
-  private labelText?: Text;
+  private labelText?: Text | BitmapText;
+  private styleTree: StyleTree;
 
   constructor(
     config: ToolbarButtonConfig,
     app: Application,
+    styleTree: StyleTree,
     container: Container,
     background: Graphics,
     border: Graphics,
     sprite: Sprite,
-    labelText?: Text
+    labelText?: Text | BitmapText
   ) {
     super(
       {
         value: {
-          ...config,
+          id: config.id,
+          sprite: config.sprite,
+          label: config.label,
+          onClick: config.onClick,
+          isDisabled: config.isDisabled ?? false,
           isHovered: false,
           isDirty: true,
         },
@@ -47,6 +59,7 @@ export class ToolbarButtonStore extends TickerForest<ToolbarButtonState> {
       app
     );
 
+    this.styleTree = styleTree;
     this.container = container;
     this.background = background;
     this.border = border;
@@ -97,15 +110,84 @@ export class ToolbarButtonStore extends TickerForest<ToolbarButtonState> {
   }
 
   /**
+   * Get the current states array based on button state
+   */
+  private getCurrentStates(): string[] {
+    const { isDisabled, isHovered } = this.value;
+    return isDisabled ? ['disabled'] : (isHovered ? ['hover'] : []);
+  }
+
+  /**
+   * Get a style value from the StyleTree for the current button state
+   */
+  private getButtonStyle(...propertyPath: string[]): any {
+    const states = this.getCurrentStates();
+    return this.styleTree.match({
+      nouns: ['toolbar', 'button', ...propertyPath],
+      states
+    });
+  }
+
+  /**
+   * Get a label style value from the StyleTree for the current state
+   */
+  private getLabelStyle(property: string): any {
+    const { isDisabled, isHovered } = this.value;
+
+    // Determine which states to query (empty array for base state)
+    const states: string[] = isDisabled
+      ? []  // Use base state for disabled labels
+      : (isHovered ? ['hover'] : []);
+
+    const match = this.styleTree.match({
+      nouns: ['toolbar', 'label', property],
+      states
+    });
+
+    return match?.value;
+  }
+
+  /**
    * TickerForest abstract method - resolve (renders the button)
    */
   protected resolve(): void {
-    const { iconSize, padding, appearance, isDisabled, isHovered, labelConfig } = this.value;
+    const { isDisabled, isHovered } = this.value;
+
+    // Get button styles from StyleTree (digest flattens nested objects)
+    const iconSize = this.getButtonStyle('iconSize') ?? 32;
+    const paddingX = this.getButtonStyle('padding', 'x') ?? 4;
+    const paddingY = this.getButtonStyle('padding', 'y') ?? 4;
+    const padding = { x: paddingX, y: paddingY };
+
+    // Build stroke object from flattened properties
+    const stroke = {
+      color: {
+        r: this.getButtonStyle('stroke', 'color', 'r') ?? 0.5,
+        g: this.getButtonStyle('stroke', 'color', 'g') ?? 0.5,
+        b: this.getButtonStyle('stroke', 'color', 'b') ?? 0.5,
+      },
+      alpha: this.getButtonStyle('stroke', 'alpha') ?? 1,
+      width: this.getButtonStyle('stroke', 'width') ?? 1,
+    };
+
+    // Build fill object from flattened properties (only if fill.alpha exists)
+    const fillAlpha = this.getButtonStyle('fill', 'alpha');
+    const fill = fillAlpha !== undefined ? {
+      color: {
+        r: this.getButtonStyle('fill', 'color', 'r') ?? 0.9,
+        g: this.getButtonStyle('fill', 'color', 'g') ?? 0.9,
+        b: this.getButtonStyle('fill', 'color', 'b') ?? 0.9,
+      },
+      alpha: fillAlpha,
+    } : undefined;
+
+    const iconAlpha = this.getButtonStyle('iconAlpha') ?? 1;
+    const iconTint = this.getButtonStyle('iconTint');
 
     // Scale sprite to fit icon size (maintain aspect ratio, fit within iconSize)
     const textureWidth = this.sprite.texture.width;
     const textureHeight = this.sprite.texture.height;
-    const scale = iconSize! / Math.max(textureWidth, textureHeight);
+    const scale = iconSize / Math.max(textureWidth, textureHeight);
     this.sprite.scale.set(scale);
 
     // Calculate actual sprite dimensions after scaling
@@ -113,60 +195,89 @@ export class ToolbarButtonStore extends TickerForest<ToolbarButtonState> {
     const spriteHeight = textureHeight * scale;
 
     // Calculate button size based on actual sprite size
-    const buttonWidth = spriteWidth + padding!.x * 2;
-    const buttonHeight = spriteHeight + padding!.y * 2;
+    const buttonWidth = spriteWidth + padding.x * 2;
+    const buttonHeight = spriteHeight + padding.y * 2;
 
     // Clear graphics
     this.background.clear();
     this.border.clear();
 
-    // Get current state (disabled, hover, or base)
-    const state = isDisabled
-      ? appearance!.disabled
-      : (isHovered ? appearance!.hover : appearance!.base);
-
     // Draw background fill if provided
-    if (state.fill) {
-      const bgColor = rgbToColor(state.fill.color);
-      const bgAlpha = state.fill.alpha;
+    if (fill) {
+      const bgColor = rgbToColor(fill.color);
+      const bgAlpha = fill.alpha;
       this.background.rect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight);
       this.background.fill({ color: bgColor, alpha: bgAlpha });
     }
 
-    // Draw border stroke (separate graphic with its own alpha)
+    // Draw border stroke
     this.border.rect(-buttonWidth / 2, -buttonHeight / 2, buttonWidth, buttonHeight);
     this.border.stroke({
-      color: rgbToColor(state.stroke.color),
-      width: state.stroke.width,
-      alpha: state.stroke.alpha
+      color: rgbToColor(stroke.color),
+      width: stroke.width,
+      alpha: stroke.alpha
     });
 
-    // Apply icon alpha and tint from state
-    this.sprite.alpha = state.iconAlpha;
-    if (state.iconTint) {
-      this.sprite.tint = rgbToColor(state.iconTint);
+    // Apply icon alpha and tint
+    this.sprite.alpha = iconAlpha;
+    if (iconTint) {
+      this.sprite.tint = rgbToColor(iconTint);
     } else {
       this.sprite.tint = 0xffffff; // Reset to white (no tint)
     }
 
     // Update label if it exists
-    if (this.labelText && labelConfig) {
+    if (this.labelText) {
+      const labelPadding = this.getLabelStyle('padding') ?? 4;
+      const labelColor = this.getLabelStyle('color') ?? { r: 0, g: 0, b: 0 };
+      const labelAlpha = this.getLabelStyle('alpha') ?? 0.5;
+
       // Position label
-      const labelY = buttonHeight / 2 + labelConfig.padding;
+      const labelY = buttonHeight / 2 + labelPadding;
       this.labelText.position.set(0, labelY);
 
-      // Use base state for disabled, otherwise use hover/base
-      const labelState = isDisabled
-        ? labelConfig.base
-        : (isHovered ? labelConfig.hover : labelConfig.base);
-
-      this.labelText.style.fill = rgbToColor(labelState.color);
-      this.labelText.alpha = isDisabled ? labelState.alpha * 0.5 : labelState.alpha;
+      // BitmapText uses tint, Text uses style.fill
+      if ('tint' in this.labelText && !('style' in this.labelText && 'fill' in (this.labelText.style as any))) {
+        // BitmapText
+        this.labelText.tint = rgbToColor(labelColor);
+      } else {
+        // Regular Text
+        (this.labelText as Text).style.fill = rgbToColor(labelColor);
+      }
+      this.labelText.alpha = isDisabled ? labelAlpha * 0.5 : labelAlpha;
     }
 
     // Update container interactivity based on disabled state
     this.container.eventMode = isDisabled ? 'none' : 'static';
     this.container.cursor = isDisabled ? 'default' : 'pointer';
+  }
+
+  /**
+   * Get the current icon size from StyleTree
+   */
+  getIconSize(): number {
+    return this.getButtonStyle('iconSize') ?? 32;
+  }
+
+  /**
+   * Get the current padding from StyleTree
+   */
+  getPadding(): { x: number; y: number } {
+    return this.getButtonStyle('padding') ?? { x: 4, y: 4 };
+  }
+
+  /**
+   * Get the current label padding from StyleTree
+   */
+  getLabelPadding(): number {
+    return this.getLabelStyle('padding') ?? 4;
+  }
+
+  /**
+   * Get the current label font size from StyleTree
+   */
+  getLabelFontSize(): number {
+    return this.getLabelStyle('fontSize') ?? 12;
   }
 }
 

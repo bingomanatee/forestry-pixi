@@ -24,6 +24,7 @@ export class WindowsManager extends Forest<WindowStoreValue> {
             {
                 value: {
                     windows: new Map(), // if we don't need any further variables we may collapse this to a map
+                    selected: new Set(),
                 },
                 // @ts-ignore
                 prep(next: WindowStoreValue) {
@@ -183,7 +184,92 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         this.#removeWindowBranch(id);
         this.mutate((draft) => {
             draft.windows.delete(id);
+            draft.selected.delete(id); // Remove from selection if selected
         });
+    }
+
+    /**
+     * Select a window (adds to selection set)
+     */
+    selectWindow(id: string) {
+        if (this.value.windows.has(id)) {
+            this.mutate((draft) => {
+                draft.selected.add(id);
+            });
+        }
+    }
+
+    /**
+     * Deselect a window (removes from selection set)
+     */
+    deselectWindow(id: string) {
+        this.mutate((draft) => {
+            draft.selected.delete(id);
+        });
+    }
+
+    /**
+     * Set the selection to a single window (clears other selections)
+     */
+    setSelectedWindow(id: string) {
+        if (this.value.windows.has(id)) {
+            this.mutate((draft) => {
+                draft.selected.clear();
+                draft.selected.add(id);
+            });
+        }
+    }
+
+    /**
+     * Set the selection to multiple windows (clears other selections)
+     */
+    setSelectedWindows(ids: string[]) {
+        this.mutate((draft) => {
+            draft.selected.clear();
+            ids.forEach(id => {
+                if (draft.windows.has(id)) {
+                    draft.selected.add(id);
+                }
+            });
+        });
+    }
+
+    /**
+     * Clear all selections
+     */
+    clearSelection() {
+        this.mutate((draft) => {
+            draft.selected.clear();
+        });
+    }
+
+    /**
+     * Check if a window is selected
+     */
+    isWindowSelected(id: string): boolean {
+        return this.value.selected.has(id);
+    }
+
+    /**
+     * Get all selected window IDs
+     */
+    getSelectedWindows(): ReadonlySet<string> {
+        return this.value.selected;
+    }
+
+    /**
+     * Toggle window selection
+     */
+    toggleWindowSelection(id: string) {
+        if (this.value.windows.has(id)) {
+            this.mutate((draft) => {
+                if (draft.selected.has(id)) {
+                    draft.selected.delete(id);
+                } else {
+                    draft.selected.add(id);
+                }
+            });
+        }
     }
 }
 

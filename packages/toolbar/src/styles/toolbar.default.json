@@ -1,0 +1,57 @@
+{
+  "toolbar": {
+    "button": {
+      "iconSize": {
+        "$*": 32
+      },
+      "padding": {
+        "$*": { "x": 4, "y": 4 }
+      },
+      "stroke": {
+        "$*": {
+          "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
+          "alpha": 1,
+          "width": 1
+        },
+        "$hover": {
+          "color": { "r": 0.7, "g": 0.7, "b": 0.7 },
+          "alpha": 1,
+          "width": 1
+        },
+        "$disabled": {
+          "color": { "r": 0.85, "g": 0.85, "b": 0.85 },
+          "alpha": 0.5,
+          "width": 1
+        }
+      },
+      "fill": {
+        "$disabled": {
+          "color": { "r": 0.9, "g": 0.9, "b": 0.9 },
+          "alpha": 0.3
+        }
+      },
+      "iconAlpha": {
+        "$*": 1,
+        "$hover": 1,
+        "$disabled": 0.5
+      }
+    },
+    "label": {
+      "fontSize": {
+        "$*": 12
+      },
+      "padding": {
+        "$*": 4
+      },
+      "color": {
+        "$*": { "r": 0, "g": 0, "b": 0 },
+        "$hover": { "r": 0, "g": 0, "b": 0 }
+      },
+      "alpha": {
+        "$*": 0.5,
+        "$hover": 1
+      }
+    }
+  }
+}
+

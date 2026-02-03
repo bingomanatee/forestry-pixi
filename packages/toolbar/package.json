@@ -6,18 +6,21 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "peerDependencies": {
     "pixi.js": "^8.0.0"
   },
   "dependencies": {
+    "@forestry-pixi/style-tree": "workspace:^",
     "@wonderlandlabs/forestry4": "^4.1.12",
     "rxjs": "^7.8.1",
     "zod": "^4.3.5"
   },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vitest": "^4.0.18"
   }
 }
-

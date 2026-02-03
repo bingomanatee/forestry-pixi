@@ -84,6 +84,7 @@ export type WindowDef = z.infer<typeof WindowDefSchema>;
 // WindowsManager state schema
 export const WindowStoreSchema = z.object({
     windows: z.map(z.string(), WindowDefSchema).default(new Map()),
+    selected: z.set(z.string()).default(new Set()),
 });
 
 export type WindowStoreValue = z.infer<typeof WindowStoreSchema>;

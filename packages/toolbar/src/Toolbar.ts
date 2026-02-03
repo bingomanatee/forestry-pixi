@@ -1,7 +1,9 @@
 import { Container, Application } from 'pixi.js';
+import { StyleTree, fromJSON } from '@forestry-pixi/style-tree';
 import { ToolbarButton } from './ToolbarButton';
 import type { ToolbarConfig, ToolbarButtonConfig } from './types';
 import { ToolbarConfigSchema } from './types';
+import defaultStyles from './styles/toolbar.default.json';
 
 /**
  * Toolbar - A container for toolbar buttons with configurable layout
@@ -11,11 +13,15 @@ export class Toolbar {
   private buttons: ToolbarButton[] = [];
   private config: ToolbarConfig;
   private app: Application;
+  private styleTree: StyleTree;
 
   constructor(config: ToolbarConfig, app: Application) {
     // Parse config through schema to apply defaults
     this.config = ToolbarConfigSchema.parse(config);
     this.app = app;
+
+    // Use provided StyleTree or load default styles
+    this.styleTree = this.config.style ?? fromJSON(defaultStyles);
 
     // Create container
     this.container = new Container({
@@ -31,16 +37,7 @@ export class Toolbar {
 
   private createButtons(): void {
     this.config.buttons.forEach((buttonConfig) => {
-      // Merge button config with defaults
-      const mergedConfig: ToolbarButtonConfig = {
-        ...buttonConfig,
-        iconSize: buttonConfig.iconSize ?? this.config.buttonDefaults.iconSize,
-        padding: buttonConfig.padding ?? this.config.buttonDefaults.padding,
-        appearance: buttonConfig.appearance ?? this.config.buttonDefaults.appearance,
-        labelConfig: buttonConfig.labelConfig ?? this.config.buttonDefaults.labelConfig,
-      };
-
-      const button = new ToolbarButton(mergedConfig, this.app);
+      const button = new ToolbarButton(buttonConfig, this.app, this.styleTree, this.config.bitmapFont);
       this.buttons.push(button);
       this.container.addChild(button.getContainer());
     });
