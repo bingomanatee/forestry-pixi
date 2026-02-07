@@ -1,12 +1,24 @@
-import {Application, Container} from 'pixi.js';
+import {Application, Assets, Container, Texture} from 'pixi.js';
 import {Forest} from "@wonderlandlabs/forestry4";
-import {WindowDef, WindowDefInput, WindowDefSchema, WindowStoreClass, WindowStoreValue, ZIndexData, PartialWindowStyle} from './types';
+import {WindowDef, WindowDefInput, WindowDefSchema, WindowStoreClass, WindowStoreValue, ZIndexData, PartialWindowStyle, TextureDef} from './types';
 import {WindowStore} from "./WindowStore";
+
+// Texture status constants
+export const TEXTURE_STATUS = {
+    MISSING: 'missing',   // Not in state at all
+    PENDING: 'pending',   // In state but not yet started loading
+    LOADING: 'loading',   // Currently being loaded
+    LOADED: 'loaded',     // Successfully loaded and ready to use
+    ERROR: 'error',       // Failed to load
+} as const;
+
+export type TextureStatus = typeof TEXTURE_STATUS[keyof typeof TEXTURE_STATUS];
 
 export interface WindowsManagerConfig {
     app: Application;
     container: Container;
     handleContainer?: Container;
+    textures?: TextureDef[];
 }
 
 /**
@@ -25,10 +37,15 @@ export class WindowsManager extends Forest<WindowStoreValue> {
                 value: {
                     windows: new Map(), // if we don't need any further variables we may collapse this to a map
                     selected: new Set(),
+                    textures: [] as TextureDef[],
                 },
                 // @ts-ignore
                 prep(next: WindowStoreValue) {
                     (this as WindowsManager).initNewWindows(next.windows);
+                    // Ensure all textures have status field for Immer compatibility
+                    for (const tex of next.textures) {
+                        if (tex.status === undefined) tex.status = TEXTURE_STATUS.PENDING;
+                    }
                     return next;
                 }
             }
@@ -36,6 +53,19 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         this.app = config.app;
         this.#initContainers(config);
         this.initNewWindows(this.value.windows);
+
+        // Add any textures provided in config to state and load them
+        if (config.textures && config.textures.length > 0) {
+            // Ensure textures have status field before adding to state
+            const preparedTextures = config.textures.map(t => ({
+                ...t,
+                status: t.status ?? TEXTURE_STATUS.PENDING,
+            }));
+            this.mutate(draft => {
+                draft.textures.push(...preparedTextures);
+            });
+            this.loadTextures();
+        }
     }
 
     #initContainers(config: Partial<WindowsManagerConfig>) {
@@ -176,12 +206,13 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         const indices = this.#flattenZIndices()
         let maxIndex = 0;
         // Apply the sorted order using setChildIndex
+        // Use guardContainer since that's what's added to windowsContainer
         indices.forEach(({branch, zIndexFlat}) => {
             const branchStore = branch as WindowStore;
             maxIndex = Math.max(maxIndex, zIndexFlat);
-            if (branchStore.rootContainer && this.windowsContainer.children.includes(branchStore.rootContainer)) {
+            if (branchStore.guardContainer && this.windowsContainer.children.includes(branchStore.guardContainer)) {
                 try {
-                    this.windowsContainer.setChildIndex(branchStore.rootContainer, zIndexFlat);
+                    this.windowsContainer.setChildIndex(branchStore.guardContainer, zIndexFlat);
                 } catch (err) {
                 }
             }
@@ -320,6 +351,92 @@ export class WindowsManager extends Forest<WindowStoreValue> {
                 }
             });
             this.#refreshWindowSelection(id);
+        }
+    }
+
+    // ==================== Texture Management ====================
+
+    /**
+     * Load textures that are in state but not yet loaded.
+     * Finds textures where status is 'pending', then batch loads them.
+     * When textures finish loading, all windows and titlebars are marked dirty.
+     */
+    loadTextures() {
+        const textures = this.value.textures as TextureDef[];
+        const texturesToLoad = textures.filter(t => !t.status || t.status === TEXTURE_STATUS.PENDING);
+        if (texturesToLoad.length === 0) return;
+
+        // Get the IDs of textures to load
+        const idsToLoad = texturesToLoad.map(t => t.id);
+
+        // Mark them as loading via mutate (respects Immer)
+        this.mutate(draft => {
+            for (const tex of draft.textures) {
+                if (idsToLoad.includes(tex.id)) {
+                    tex.status = TEXTURE_STATUS.LOADING;
+                }
+            }
+        });
+
+        // Build manifest for batch loading
+        const manifest = {
+            bundles: [{
+                name: 'windowTextures',
+                assets: texturesToLoad.map(({id, url}) => ({
+                    alias: id,
+                    src: url
+                }))
+            }]
+        };
+
+        // Use Assets.init with manifest for efficient batch loading
+        Assets.init({manifest}).then(() => {
+            return Assets.loadBundle('windowTextures');
+        }).then((loadedTextures) => {
+            // Update entries with loaded textures via mutate
+            this.mutate(draft => {
+                for (const tex of draft.textures) {
+                    if (idsToLoad.includes(tex.id)) {
+                        tex.texture = loadedTextures[tex.id];
+                        tex.status = TEXTURE_STATUS.LOADED;
+                    }
+                }
+            });
+            // Mark all windows and titlebars dirty
+            this.#markAllDirty();
+        }).catch((err) => {
+            // Mark all as errored via mutate
+            this.mutate(draft => {
+                for (const tex of draft.textures) {
+                    if (idsToLoad.includes(tex.id)) {
+                        tex.status = TEXTURE_STATUS.ERROR;
+                        tex.error = err?.message || String(err);
+                    }
+                }
+            });
+            console.warn('Failed to load textures:', err);
+        });
+    }
+
+    /**
+     * Get the status of a texture by id.
+     * Returns MISSING if not in state, PENDING if not yet loading,
+     * LOADING if currently loading, ERROR if load failed, or LOADED if ready to use.
+     * Use Assets.get(id) to retrieve the actual texture when status is LOADED.
+     */
+    getTextureStatus(id: string): TextureStatus {
+        const textures = this.value.textures as TextureDef[];
+        const tex = textures.find(t => t.id === id);
+        if (!tex) return TEXTURE_STATUS.MISSING;
+        return tex.status ?? TEXTURE_STATUS.PENDING;
+    }
+
+    /**
+     * Mark all windows and their titlebars as dirty to trigger re-render
+     */
+    #markAllDirty() {
+        for (const [, windowStore] of this.#windowsBranches) {
+            windowStore.markDirty();
         }
     }
 }

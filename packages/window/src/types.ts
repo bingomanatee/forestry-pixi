@@ -155,13 +155,37 @@ export type WindowDefInput = Omit<Partial<WindowDef>, 'titlebar'> & {
     storeClass?: WindowStoreClass; // Custom WindowStore subclass
 };
 
+// Texture status values
+// - 'pending': in state but not yet started loading
+// - 'loading': currently being loaded
+// - 'loaded': successfully loaded and ready to use
+// - 'error': failed to load
+export const TextureStatusValues = ['pending', 'loading', 'loaded', 'error'] as const;
+export const TextureStatusSchema = z.enum(TextureStatusValues).default('pending');
+
+// Texture definition with status (for WindowsManager)
+export const TextureDefSchema = z.object({
+    id: z.string(),
+    url: z.string(),
+    status: TextureStatusSchema.optional(),
+    error: z.string().optional(), // Error message when status is 'error'
+    // Note: texture (Texture) is not in schema since it can't be serialized
+});
+
+export type TextureDef = z.infer<typeof TextureDefSchema> & {
+    texture?: import('pixi.js').Texture;
+};
+
 // WindowsManager state schema
 export const WindowStoreSchema = z.object({
     windows: z.map(z.string(), WindowDefSchema).default(new Map()),
     selected: z.set(z.string()).default(new Set()),
+    textures: z.array(TextureDefSchema).default([]),
 });
 
-export type WindowStoreValue = z.infer<typeof WindowStoreSchema>;
+export type WindowStoreValue = z.infer<typeof WindowStoreSchema> & {
+    textures: TextureDef[];
+};
 
 export const ZIndexDataSchema = z.object({
     zIndex: z.number(),

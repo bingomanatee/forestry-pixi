@@ -341,6 +341,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@forestry-pixi/box@workspace:*, @forestry-pixi/box@workspace:^, @forestry-pixi/box@workspace:packages/box":
+  version: 0.0.0-use.local
+  resolution: "@forestry-pixi/box@workspace:packages/box"
+  dependencies:
+    "@forestry-pixi/ticker-forest": "workspace:*"
+    "@wonderlandlabs/forestry4": "npm:^4.1.12"
+    typescript: "npm:^5.5.3"
+    vitest: "npm:^4.0.18"
+    zod: "npm:^4.3.5"
+  peerDependencies:
+    pixi.js: ^8.0.0
+  languageName: unknown
+  linkType: soft
+
 "@forestry-pixi/drag@workspace:*, @forestry-pixi/drag@workspace:packages/drag":
   version: 0.0.0-use.local
   resolution: "@forestry-pixi/drag@workspace:packages/drag"
@@ -364,6 +378,21 @@ __metadata:
     pixi.js: "npm:^8.6.6"
     typescript: "npm:^5.5.3"
     vitest: "npm:^4.0.17"
+    zod: "npm:^4.3.5"
+  peerDependencies:
+    pixi.js: ^8.0.0
+  languageName: unknown
+  linkType: soft
+
+"@forestry-pixi/list@workspace:^, @forestry-pixi/list@workspace:packages/list":
+  version: 0.0.0-use.local
+  resolution: "@forestry-pixi/list@workspace:packages/list"
+  dependencies:
+    "@forestry-pixi/box": "workspace:*"
+    "@forestry-pixi/ticker-forest": "workspace:*"
+    "@wonderlandlabs/forestry4": "npm:^4.1.12"
+    typescript: "npm:^5.5.3"
+    vitest: "npm:^4.0.18"
     zod: "npm:^4.3.5"
   peerDependencies:
     pixi.js: ^8.0.0
@@ -420,6 +449,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@forestry-pixi/toolbar@workspace:packages/toolbar"
   dependencies:
+    "@forestry-pixi/box": "workspace:^"
+    "@forestry-pixi/list": "workspace:^"
     "@forestry-pixi/style-tree": "workspace:^"
     "@wonderlandlabs/forestry4": "npm:^4.1.12"
     rxjs: "npm:^7.8.1"

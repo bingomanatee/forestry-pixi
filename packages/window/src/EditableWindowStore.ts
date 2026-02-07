@@ -42,30 +42,7 @@ export class EditableWindowStore extends WindowStore {
      */
     resolveComponents(parentContainer?: Container, handlesContainer?: Container) {
         super.resolveComponents(parentContainer, handlesContainer);
-        this.#applyModalState();
     }
 
-    /**
-     * Apply modal selection state - fade and disable if not selected while modal is active
-     */
-    #applyModalState() {
-        const isSelected = this.isSelected;
-        const isModalActive = this.isModalModeActive;
-
-        if (!isModalActive) {
-            // No selection - restore normal state
-            this.rootContainer.alpha = 1;
-            this.rootContainer.eventMode = 'static';
-        } else if (isSelected) {
-            // This window is selected - keep normal, disable mask
-            this.rootContainer.alpha = 1;
-            this.rootContainer.eventMode = 'static';
-            // Content mask is already handled in WindowStore's #refreshContentMask
-        } else {
-            // Another window is selected - fade and disable this one
-            this.rootContainer.alpha = UNSELECTED_ALPHA;
-            this.rootContainer.eventMode = 'none';
-        }
-    }
 }
 

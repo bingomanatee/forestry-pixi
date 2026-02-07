@@ -1,5 +1,5 @@
 import {TickerForest} from "@forestry-pixi/ticker-forest";
-import type {WindowDef, RgbColor, PartialWindowStyle, WindowStyle} from "./types";
+import type {PartialWindowStyle, RgbColor, WindowDef, WindowStyle} from "./types";
 import {Application, Container, Graphics, Rectangle} from "pixi.js";
 import {WindowsManager} from "./WindowsManager";
 import rgbToColor from "./rgbToColor";
@@ -19,6 +19,11 @@ export class WindowStore extends TickerForest<WindowDef> {
     customStyle?: PartialWindowStyle; // User style overrides
 
     // Pixi components - created in property definitions
+    // guardContainer wraps rootContainer to protect event listeners from being purged
+    // when event models change on rootContainer
+    #guardContainer: Container = new Container({
+        position: {x: 0, y: 0}
+    });
     #rootContainer: Container = new Container({
         eventMode: "static",
         position: {x: 0, y: 0},
@@ -84,9 +89,13 @@ export class WindowStore extends TickerForest<WindowDef> {
         this.#refreshRoot();
         this.#refreshBackground();
         this.#refreshSelectionBorder();
-        // Add container to parent BEFORE titlebar (titlebar needs parent to exist)
-        if (!this.#rootContainer.parent && parentContainer) {
-            parentContainer.addChild(this.#rootContainer);
+        // Add guardContainer to parent, rootContainer to guardContainer
+        // guardContainer protects rootContainer's event listeners from being purged
+        if (!this.#guardContainer.parent && parentContainer) {
+            parentContainer.addChild(this.#guardContainer);
+        }
+        if (!this.#rootContainer.parent) {
+            this.#guardContainer.addChild(this.#rootContainer);
         }
         this.#refreshContentContainer();
         this.#refreshTitlebar();
@@ -441,7 +450,15 @@ export class WindowStore extends TickerForest<WindowDef> {
     }
 
     /**
-     * Get the rootContainer container for this window (needed for z-index management)
+     * Get the guardContainer for this window (used for z-index management in parent)
+     * guardContainer wraps rootContainer to protect event listeners
+     */
+    get guardContainer(): Container {
+        return this.#guardContainer;
+    }
+
+    /**
+     * Get the rootContainer for this window (main container with event handling)
      */
     get rootContainer(): Container {
         return this.#rootContainer;
@@ -460,6 +477,16 @@ export class WindowStore extends TickerForest<WindowDef> {
 
     protected clearDirty(): void {
         this.set('isDirty', false);
+    }
+
+    /**
+     * Mark this window and its titlebar as dirty to trigger re-render
+     */
+    markDirty(): void {
+        this.set('isDirty', true);
+        this.queueResolve();
+
+        this.#titlebarStore?.markDirty();
     }
 
     protected resolve(): void {
@@ -501,8 +528,8 @@ export class WindowStore extends TickerForest<WindowDef> {
             this.#contentMask.destroy();
         }
 
-        // Cleanup containers
-        this.#rootContainer.destroy({children: true});
+        // Cleanup containers (guardContainer contains rootContainer)
+        this.#guardContainer.destroy({children: true});
     }
 
 }

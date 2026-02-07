@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/html';
 import { Application, Assets, Sprite, Spritesheet } from 'pixi.js';
-import { Toolbar } from './Toolbar';
+import { ToolbarStore } from './ToolbarStore';
 import type { ToolbarButtonConfig } from './types';
 
 interface ToolbarArgs {
@@ -9,7 +9,7 @@ interface ToolbarArgs {
 }
 
 const meta: Meta<ToolbarArgs> = {
-  title: 'Toolbar/Toolbar',
+  title: 'Toolbar',
   args: {
     orientation: 'horizontal',
     spacing: 8,
@@ -20,7 +20,6 @@ const meta: Meta<ToolbarArgs> = {
     wrapper.style.height = '600px';
     wrapper.style.position = 'relative';
 
-    // Create PixiJS app
     const app = new Application();
     app.init({
       width: 800,
@@ -36,47 +35,50 @@ const meta: Meta<ToolbarArgs> = {
         Assets.load('/image_font/image_font.xml.fnt'),
       ]);
 
-      // Create button configurations (only id and sprite required)
-      // Styling is handled by the default StyleTree loaded from toolbar.default.json
-      const buttonConfigs: ToolbarButtonConfig[] = [
-        {
-          id: 'image',
-          sprite: new Sprite(spritesheet.textures['ctrl-image@4x.png']),
-          label: 'Image',
-          onClick: () => console.log('Image button clicked'),
-        },
-        {
-          id: 'caption',
-          sprite: new Sprite(spritesheet.textures['ctrl-caption@4x.png']),
-          label: 'Caption',
-          onClick: () => console.log('Caption button clicked'),
-          isDisabled: true, // Explicitly disabled
-        },
-        {
-          id: 'frame',
-          sprite: new Sprite(spritesheet.textures['ctrl-frame@4x.png']),
-          label: 'Frame',
-          onClick: () => console.log('Frame button clicked'),
-        },
-        {
-          id: 'actor',
-          sprite: new Sprite(spritesheet.textures['ctrl-actor@4x.png']),
-          label: 'Actor',
-          onClick: () => console.log('Actor button clicked'),
-        },
-      ];
-
-      // Create toolbar - uses default StyleTree for styling and bitmap font for labels
-      const toolbar = new Toolbar({
-        buttons: buttonConfigs,
+      // Create toolbar with icon buttons
+      const toolbar = new ToolbarStore({
+        id: 'main-toolbar',
+        buttons: [
+          {
+            id: 'image',
+            sprite: new Sprite(spritesheet.textures['ctrl-image@4x.png']),
+            label: 'Image',
+            onClick: () => console.log('Image button clicked'),
+          },
+          {
+            id: 'caption',
+            sprite: new Sprite(spritesheet.textures['ctrl-caption@4x.png']),
+            label: 'Caption',
+            onClick: () => console.log('Caption button clicked'),
+            isDisabled: true,
+          },
+          {
+            id: 'frame',
+            sprite: new Sprite(spritesheet.textures['ctrl-frame@4x.png']),
+            label: 'Frame',
+            onClick: () => console.log('Frame button clicked'),
+          },
+          {
+            id: 'actor',
+            sprite: new Sprite(spritesheet.textures['ctrl-actor@4x.png']),
+            label: 'Actor',
+            onClick: () => console.log('Actor button clicked'),
+          },
+        ],
         spacing: args.spacing,
         orientation: args.orientation,
         bitmapFont: 'Inter_18pt-Medium',
+        padding: 8,
+        background: {
+          fill: { color: { r: 0.95, g: 0.95, b: 0.95 }, alpha: 1 },
+          stroke: { color: { r: 0.7, g: 0.7, b: 0.7 }, width: 1, alpha: 1 },
+          borderRadius: 8,
+        },
       }, app);
 
-      // Position toolbar
-      toolbar.getContainer().position.set(400, 300);
-      app.stage.addChild(toolbar.getContainer());
+      toolbar.container.position.set(50, 50);
+      app.stage.addChild(toolbar.container);
+      toolbar.kickoff();
     });
 
     return wrapper;
@@ -94,3 +96,117 @@ export const Vertical: Story = {
   },
 };
 
+// Text-only buttons story
+export const TextOnly: Story = {
+  render: (args) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.width = '100%';
+    wrapper.style.height = '600px';
+    wrapper.style.position = 'relative';
+
+    const app = new Application();
+    app.init({
+      width: 800,
+      height: 600,
+      backgroundColor: 0xf0f0f0,
+      antialias: true,
+    }).then(async () => {
+      wrapper.appendChild(app.canvas);
+
+      // Create toolbar with text-only buttons (no sprites)
+      const toolbar = new ToolbarStore({
+        id: 'text-toolbar',
+        buttons: [
+          {
+            id: 'image',
+            label: 'Image',
+            onClick: () => console.log('Image button clicked'),
+          },
+          {
+            id: 'caption',
+            label: 'Caption',
+            onClick: () => console.log('Caption button clicked'),
+          },
+          {
+            id: 'done',
+            label: 'Done',
+            onClick: () => console.log('Done button clicked'),
+            isDisabled: true,
+          },
+        ],
+        spacing: args.spacing,
+        orientation: args.orientation,
+        padding: 8,
+        background: {
+          fill: { color: { r: 0.95, g: 0.95, b: 0.95 }, alpha: 1 },
+          stroke: { color: { r: 0.7, g: 0.7, b: 0.7 }, width: 1, alpha: 1 },
+          borderRadius: 8,
+        },
+      }, app);
+
+      toolbar.container.position.set(50, 50);
+      app.stage.addChild(toolbar.container);
+      toolbar.kickoff();
+    });
+
+    return wrapper;
+  },
+};
+
+export const TextOnlyVertical: Story = {
+  args: {
+    orientation: 'vertical',
+  },
+  render: (args) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.width = '100%';
+    wrapper.style.height = '600px';
+    wrapper.style.position = 'relative';
+
+    const app = new Application();
+    app.init({
+      width: 800,
+      height: 600,
+      backgroundColor: 0xf0f0f0,
+      antialias: true,
+    }).then(async () => {
+      wrapper.appendChild(app.canvas);
+
+      const toolbar = new ToolbarStore({
+        id: 'text-toolbar-vertical',
+        buttons: [
+          {
+            id: 'image',
+            label: 'Image',
+            onClick: () => console.log('Image button clicked'),
+          },
+          {
+            id: 'caption',
+            label: 'Caption',
+            onClick: () => console.log('Caption button clicked'),
+          },
+          {
+            id: 'done',
+            label: 'Done',
+            onClick: () => console.log('Done button clicked'),
+            isDisabled: true,
+          },
+        ],
+        spacing: args.spacing,
+        orientation: args.orientation,
+        padding: 8,
+        background: {
+          fill: { color: { r: 0.95, g: 0.95, b: 0.95 }, alpha: 1 },
+          stroke: { color: { r: 0.7, g: 0.7, b: 0.7 }, width: 1, alpha: 1 },
+          borderRadius: 8,
+        },
+      }, app);
+
+      toolbar.container.position.set(50, 50);
+      app.stage.addChild(toolbar.container);
+      toolbar.kickoff();
+    });
+
+    return wrapper;
+  },
+};

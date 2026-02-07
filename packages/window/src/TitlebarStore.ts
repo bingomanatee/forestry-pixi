@@ -253,6 +253,14 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
         this.set('isDirty', false);
     }
 
+    /**
+     * Mark this titlebar as dirty to trigger re-render
+     */
+    markDirty(): void {
+        this.set('isDirty', true);
+        this.queueResolve();
+    }
+
     protected resolve(): void {
         if (this.isDirty()) {
             this.resolveComponents();

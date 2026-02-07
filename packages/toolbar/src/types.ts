@@ -108,27 +108,79 @@ export const LabelConfigSchema = z.object({
 
 export type LabelConfig = z.infer<typeof LabelConfigSchema>;
 
+// Button mode - determines layout style
+export const ButtonModeSchema = z.enum(['icon', 'text', 'inline']).default('icon');
+export type ButtonMode = z.infer<typeof ButtonModeSchema>;
+
 // Button configuration schema
+// Either sprite or label (or both) must be provided
 export const ToolbarButtonConfigSchema = z.object({
   id: z.string(),
-  sprite: z.custom<Sprite>(),
+  sprite: z.custom<Sprite>().optional(),
   label: z.string().optional(),
+  // Mode determines button layout:
+  // - 'icon': Icon with optional label below (default)
+  // - 'text': Text-only button with background
+  // - 'inline': Text with optional leading icon, side-by-side
+  mode: ButtonModeSchema.optional(),
+  // Variant name for style overrides (e.g., 'primary', 'danger', 'success')
+  variant: z.string().optional(),
   iconSize: z.number().min(1).optional(),
   padding: PaddingSchema.optional(),
   appearance: ButtonAppearanceSchema.optional(),
   labelConfig: LabelConfigSchema.optional(),
   onClick: z.function().optional(),
   isDisabled: z.boolean().optional()
-});
+}).refine(
+  (data) => data.sprite !== undefined || data.label !== undefined,
+  { message: 'Either sprite or label must be provided' }
+);
 
 export type ToolbarButtonConfig = z.infer<typeof ToolbarButtonConfigSchema>;
+
+// Background style schema (for toolbar background)
+export const BackgroundStyleSchema = z.object({
+  fill: z.object({
+    color: RgbColorSchema.optional(),
+    alpha: z.number().min(0).max(1).optional(),
+  }).optional(),
+  stroke: z.object({
+    color: RgbColorSchema.optional(),
+    alpha: z.number().min(0).max(1).optional(),
+    width: z.number().min(0).optional(),
+  }).optional(),
+  borderRadius: z.number().min(0).optional(),
+}).optional();
+
+export type BackgroundStyle = z.infer<typeof BackgroundStyleSchema>;
 
 // Toolbar configuration schema
 // Note: Button styling is now handled entirely by StyleTree
 export const ToolbarConfigSchema = z.object({
+  // Unique identifier for the toolbar
+  id: z.string().optional(),
   buttons: z.array(ToolbarButtonConfigSchema).default([]),
   spacing: z.number().min(0).default(8),
   orientation: z.enum(['horizontal', 'vertical']).default('horizontal'),
+  // Toolbar dimensions
+  width: z.number().min(0).optional(),
+  height: z.number().min(0).optional(),
+  // Fixed size: when true, toolbar keeps specified width/height and doesn't auto-resize
+  // When false (default), toolbar resizes to fit buttons + gaps + padding + border
+  // width/height become minimum values when fixedSize is false
+  fixedSize: z.boolean().optional(),
+  // Padding inside the toolbar
+  padding: z.union([
+    z.number(),
+    z.object({
+      top: z.number().optional(),
+      right: z.number().optional(),
+      bottom: z.number().optional(),
+      left: z.number().optional(),
+    }),
+  ]).optional(),
+  // Background style for the toolbar
+  background: BackgroundStyleSchema,
   // Optional StyleTree for custom styling - if provided, replaces default styles entirely
   style: z.custom<StyleTree>().optional(),
   // Optional bitmap font name for labels (must be pre-loaded via Assets.load)

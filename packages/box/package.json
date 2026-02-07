@@ -1,7 +1,7 @@
 {
-  "name": "@forestry-pixi/toolbar",
+  "name": "@forestry-pixi/box",
   "version": "1.0.0",
-  "description": "Toolbar component with configurable buttons for forestry-pixi",
+  "description": "Box component with size, padding, anchor, and content alignment for forestry-pixi",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -14,11 +14,8 @@
     "pixi.js": "^8.0.0"
   },
   "dependencies": {
-    "@forestry-pixi/box": "workspace:^",
-    "@forestry-pixi/list": "workspace:^",
-    "@forestry-pixi/style-tree": "workspace:^",
+    "@forestry-pixi/ticker-forest": "workspace:*",
     "@wonderlandlabs/forestry4": "^4.1.12",
-    "rxjs": "^7.8.1",
     "zod": "^4.3.5"
   },
   "devDependencies": {

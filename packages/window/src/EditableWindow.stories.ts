@@ -1,6 +1,6 @@
 import type {Meta, StoryObj} from '@storybook/html';
-import {Application, Assets, Container, Graphics, Sprite, Text} from 'pixi.js';
-import {WindowsManager} from "./WindowsManager";
+import {Application, Assets, Container, Graphics, Sprite, Text, Texture} from 'pixi.js';
+import {WindowsManager, TEXTURE_STATUS} from "./WindowsManager";
 import type {RenderTitlebarFn, WindowDef} from "./types";
 import type {TitlebarStore} from "./TitlebarStore";
 import {STYLE_VARIANT} from "./constants";
@@ -97,7 +97,8 @@ function createPixiToolbar(
 interface EditableWindowArgs {
 }
 
-// Custom titlebar renderer that adds a close button
+// Custom titlebar renderer that adds close and move buttons
+// Uses WindowsManager's texture loading system for the move icon
 const customTitlebarRenderer: RenderTitlebarFn = (
     titlebarStore: unknown,
     windowData: WindowDef,
@@ -105,6 +106,7 @@ const customTitlebarRenderer: RenderTitlebarFn = (
 ) => {
     const store = titlebarStore as TitlebarStore;
     const closeButtonId = `close-btn-${windowData.id}`;
+    const moveButtonId = `move-btn-${windowData.id}`;
 
     // Check if close button already exists
     let closeBtn = contentContainer.getChildByLabel(closeButtonId) as Graphics | null;
@@ -126,14 +128,53 @@ const customTitlebarRenderer: RenderTitlebarFn = (
         closeBtn.on('pointerdown', (event) => {
             event.stopPropagation();
             console.log(`Close button clicked for window: ${windowData.id}`);
-            // Could call windowsManager.removeWindow(windowData.id) here
         });
     }
 
-    // Position close button at right side of titlebar
+    // Check if move button already exists
+    let moveBtn = contentContainer.getChildByLabel(moveButtonId) as Container | null;
+
+    if (!moveBtn) {
+        // Check texture status from WindowsManager (accessed via store.$parent.$root)
+        const windowsManager = (store.$parent as any)?.$root as WindowsManager | undefined;
+        const textureStatus = windowsManager?.getTextureStatus('move');
+
+        if (textureStatus === TEXTURE_STATUS.LOADED) {
+            // Create move button with loaded texture
+            moveBtn = new Container({label: moveButtonId});
+            moveBtn.eventMode = 'static';
+            moveBtn.cursor = 'move';
+
+            const moveIcon = new Sprite(Assets.get('move'));
+            moveIcon.width = 16;
+            moveIcon.height = 16;
+            moveIcon.anchor.set(0.5);
+            moveBtn.addChild(moveIcon);
+
+            contentContainer.addChild(moveBtn);
+
+            moveBtn.on('pointerdown', (event) => {
+                event.stopPropagation();
+                console.log(`Move button clicked for window: ${windowData.id}`);
+            });
+        }
+        // If texture not loaded yet, WindowsManager will mark all windows dirty when it loads
+    }
+
+    // Position buttons at right side of titlebar
     const parentWidth = (store.$parent?.value as any)?.width || 200;
-    closeBtn.x = parentWidth - store.value.padding - 20;
-    closeBtn.y = -store.value.fontSize * 0.3;
+    const padding = store.value.padding;
+    const yPos = -store.value.fontSize * 0.3;
+
+    // Close button at far right
+    closeBtn.x = parentWidth - padding - 20;
+    closeBtn.y = yPos;
+
+    // Move button to the left of close button
+    if (moveBtn) {
+        moveBtn.x = parentWidth - padding - 44;
+        moveBtn.y = yPos;
+    }
 };
 
 const meta: Meta<EditableWindowArgs> = {
@@ -269,7 +310,7 @@ const meta: Meta<EditableWindowArgs> = {
             height: stageHeight,
             backgroundColor: 0x2a2a2a,
             antialias: true,
-        }).then(() => {
+        }).then(async () => {
             wrapper.appendChild(app.canvas);
             const container = new Container();
             const handleContainer = new Container();
@@ -288,7 +329,14 @@ const meta: Meta<EditableWindowArgs> = {
 
             app.stage.addChild(background, container, handleContainer, toolbar);
             app.stage.eventMode = 'static';
-            wm = new WindowsManager({container, handleContainer, app});
+            wm = new WindowsManager({
+                container,
+                handleContainer,
+                app,
+                textures: [
+                    {id: 'move', url: '/icons/move.png'}
+                ]
+            });
 
             // Window 1: Default style with custom renderer
             wm.addWindow('editor', {
@@ -434,7 +482,7 @@ const meta: Meta<EditableWindowArgs> = {
                 }
             });
 
-            // Set custom renderer on editor window's titlebar
+            // Set custom renderer on editor window's titlebar (with move icon)
             const editorBranch = wm.windowBranch('editor');
             if (editorBranch?.titlebarStore) {
                 editorBranch.titlebarStore.renderTitlebar = customTitlebarRenderer;

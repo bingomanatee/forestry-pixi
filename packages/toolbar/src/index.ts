@@ -1,4 +1,4 @@
-export { Toolbar } from './Toolbar';
-export { ToolbarButton } from './ToolbarButton';
+export { ToolbarStore } from './ToolbarStore';
+export { ToolbarButtonStore } from './ToolbarButtonStore';
 export * from './types';
 

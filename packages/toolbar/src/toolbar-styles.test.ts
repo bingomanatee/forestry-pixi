@@ -6,10 +6,12 @@ describe('Toolbar Default Styles', () => {
   const styleTree = fromJSON(defaultStyles);
 
   describe('Button base state', () => {
-    it('should have iconSize of 32', () => {
-      // match() returns the value directly, not an object with .value
-      const value = styleTree.match({ nouns: ['toolbar', 'button', 'iconSize'], states: [] });
-      expect(value).toBe(32);
+    it('should have icon size of { x: 32, y: 32 }', () => {
+      // The digest flattens nested objects, so we query individual properties
+      const sizeX = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'size', 'x'], states: [] });
+      const sizeY = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'size', 'y'], states: [] });
+      expect(sizeX).toBe(32);
+      expect(sizeY).toBe(32);
     });
 
     it('should have padding x and y of 4', () => {
@@ -25,9 +27,9 @@ describe('Toolbar Default Styles', () => {
       expect(alpha).toBe(1);
     });
 
-    it('should have iconAlpha of 1', () => {
-      const value = styleTree.match({ nouns: ['toolbar', 'button', 'iconAlpha'], states: [] });
-      expect(value).toBe(1);
+    it('should have icon alpha of 1', () => {
+      const alpha = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'alpha'], states: [] });
+      expect(alpha).toBe(1);
     });
 
     it('should not have fill alpha in base state', () => {
@@ -49,16 +51,16 @@ describe('Toolbar Default Styles', () => {
       expect(alpha).toBe(1);
     });
 
-    it('should have iconAlpha of 1', () => {
-      const value = styleTree.match({ nouns: ['toolbar', 'button', 'iconAlpha'], states: ['hover'] });
-      expect(value).toBe(1);
+    it('should have icon alpha of 1', () => {
+      const alpha = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'alpha'], states: ['hover'] });
+      expect(alpha).toBe(1);
     });
   });
 
   describe('Button disabled state', () => {
-    it('should have reduced iconAlpha (0.5)', () => {
-      const value = styleTree.match({ nouns: ['toolbar', 'button', 'iconAlpha'], states: ['disabled'] });
-      expect(value).toBe(0.5);
+    it('should have reduced icon alpha (0.5)', () => {
+      const alpha = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'alpha'], states: ['disabled'] });
+      expect(alpha).toBe(0.5);
     });
 
     it('should have reduced stroke alpha (0.5)', () => {
@@ -106,10 +108,12 @@ describe('Toolbar Default Styles', () => {
   });
 
   describe('State fallback behavior', () => {
-    it('should fall back to base state for iconSize when querying hover', () => {
-      // iconSize only has $* defined, so hover should fall back to base
-      const value = styleTree.match({ nouns: ['toolbar', 'button', 'iconSize'], states: ['hover'] });
-      expect(value).toBe(32);
+    it('should have icon size when querying hover', () => {
+      // icon has $hover defined with size
+      const sizeX = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'size', 'x'], states: ['hover'] });
+      const sizeY = styleTree.match({ nouns: ['toolbar', 'button', 'icon', 'size', 'y'], states: ['hover'] });
+      expect(sizeX).toBe(32);
+      expect(sizeY).toBe(32);
     });
 
     it('should fall back to base state for padding when querying disabled', () => {
