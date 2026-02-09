@@ -1,6 +1,6 @@
 import { Application, ContainerOptions } from 'pixi.js';
 import { BoxStore } from './BoxStore';
-import type { AxisDef, BoxListConfig, BoxProps, Direction } from './types';
+import type { AxisDef, BoxListConfig, BoxProps, Direction, GapMode } from './types';
 
 /**
  * BoxListStore - A box that contains child boxes with layout
@@ -8,6 +8,7 @@ import type { AxisDef, BoxListConfig, BoxProps, Direction } from './types';
  * Children are laid out based on:
  * - direction: 'horizontal' or 'vertical'
  * - gap: spacing between children
+ * - gapMode: where gaps are applied (between, before, after, all)
  * - child's xDef.align / yDef.align: alignment of each child in cross-axis
  *
  * Size modes:
@@ -19,6 +20,7 @@ export class BoxListStore extends BoxStore {
     #children: BoxStore[] = [];
     #direction: Direction;
     #gap: number;
+    #gapMode: GapMode;
 
     constructor(
         config: BoxListConfig,
@@ -29,6 +31,7 @@ export class BoxListStore extends BoxStore {
         super(config, app, boxProps, rootProps);
         this.#direction = config.direction ?? 'horizontal';
         this.#gap = config.gap ?? 0;
+        this.#gapMode = config.gapMode ?? 'between';
     }
 
     get direction(): Direction {
@@ -46,6 +49,15 @@ export class BoxListStore extends BoxStore {
 
     setGap(gap: number): void {
         this.#gap = gap;
+        this.markDirty();
+    }
+
+    get gapMode(): GapMode {
+        return this.#gapMode;
+    }
+
+    setGapMode(gapMode: GapMode): void {
+        this.#gapMode = gapMode;
         this.markDirty();
     }
 
@@ -139,7 +151,12 @@ export class BoxListStore extends BoxStore {
         // 4. Calculate percentFree children (weighted share of free space)
         // freeSpace = parentSize - px siblings - gaps
         // mySize = freeSpace * (myWeight / sumOfAllWeights)
-        const totalGaps = this.#children.length > 1 ? (this.#children.length - 1) * this.#gap : 0;
+        // Calculate total gaps based on gapMode:
+        // - between: gaps only between children (n-1 gaps)
+        // - before: gap before first + between (n gaps)
+        // - after: between + gap after last (n gaps)
+        // - all: before + between + after (n+1 gaps)
+        const totalGaps = this.#calculateTotalGaps();
         const freeSpace = Math.max(0, parentMainSize - pxTotal - percentTotal - hugTotal - totalGaps);
 
         // Sum all percentFree weights
@@ -163,23 +180,39 @@ export class BoxListStore extends BoxStore {
             }
         }
 
-        // Position children sequentially
-        let mainPos = 0;
+        // Position children sequentially based on gapMode
+        const hasBefore = this.#gapMode === 'before' || this.#gapMode === 'all';
+        const hasAfter = this.#gapMode === 'after' || this.#gapMode === 'all';
+
+        let mainPos = hasBefore ? this.#gap : 0;
         let maxCrossSize = 0;
-        for (const child of this.#children) {
+
+        for (let i = 0; i < this.#children.length; i++) {
+            const child = this.#children[i];
             const childRect = child.rect;
+            const childMainDef = isHorizontal ? child.xDef : child.yDef;
+            const childGap = childMainDef.gap ?? this.#gap;
+            const isLast = i === this.#children.length - 1;
+
             if (isHorizontal) {
                 child.setPosition(mainPos, 0);
-                mainPos += childRect.width + this.#gap;
+                mainPos += childRect.width;
+                // Add gap after unless it's the last child and we don't have 'after' mode
+                if (!isLast || hasAfter) {
+                    mainPos += childGap;
+                }
                 maxCrossSize = Math.max(maxCrossSize, childRect.height);
             } else {
                 child.setPosition(0, mainPos);
-                mainPos += childRect.height + this.#gap;
+                mainPos += childRect.height;
+                if (!isLast || hasAfter) {
+                    mainPos += childGap;
+                }
                 maxCrossSize = Math.max(maxCrossSize, childRect.width);
             }
         }
 
-        const totalMainSize = this.#children.length > 0 ? mainPos - this.#gap : 0;
+        const totalMainSize = mainPos;
 
         // Hug mode: resize parent to fit children
         if (xDef.sizeMode === 'hug' || yDef.sizeMode === 'hug') {
@@ -237,6 +270,41 @@ export class BoxListStore extends BoxStore {
                 child.setPosition(newX, child.rect.y);
             }
         }
+    }
+
+    /**
+     * Calculate total gap space based on gapMode:
+     * - between: gaps only between children (n-1 gaps)
+     * - before: gap before first + between (n gaps)
+     * - after: between + gap after last (n gaps)
+     * - all: before + between + after (n+1 gaps)
+     */
+    #calculateTotalGaps(): number {
+        if (this.#children.length === 0) return 0;
+
+        const isHorizontal = this.#direction === 'horizontal';
+        let totalGaps = 0;
+
+        // Gap before first child
+        if (this.#gapMode === 'before' || this.#gapMode === 'all') {
+            totalGaps += this.#gap;
+        }
+
+        // Gaps between children (use each child's gap or fall back to list gap)
+        for (let i = 0; i < this.#children.length - 1; i++) {
+            const child = this.#children[i];
+            const childMainDef = isHorizontal ? child.xDef : child.yDef;
+            totalGaps += childMainDef.gap ?? this.#gap;
+        }
+
+        // Gap after last child
+        if (this.#gapMode === 'after' || this.#gapMode === 'all') {
+            const lastChild = this.#children[this.#children.length - 1];
+            const lastChildMainDef = isHorizontal ? lastChild.xDef : lastChild.yDef;
+            totalGaps += lastChildMainDef.gap ?? this.#gap;
+        }
+
+        return totalGaps;
     }
 
     protected override resolve(): void {

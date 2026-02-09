@@ -32,6 +32,18 @@ export type SizeMode = z.infer<typeof SizeModeSchema>;
 export const AlignSchema = z.enum(['start', 'center', 'end']);
 export type Align = z.infer<typeof AlignSchema>;
 
+// ==================== Gap Mode ====================
+
+/**
+ * Gap mode controls where gaps are applied in a list layout:
+ * - between: gaps only between children (default)
+ * - before: gap before first child + between children
+ * - after: gaps between children + gap after last child
+ * - all: gap before first, between all, and after last
+ */
+export const GapModeSchema = z.enum(['between', 'before', 'after', 'all']);
+export type GapMode = z.infer<typeof GapModeSchema>;
+
 // ==================== Axis Definition ====================
 
 /**
@@ -43,6 +55,8 @@ export const AxisDefInputSchema = z.object({
     max: z.number().optional(),            // maximum size constraint
     align: AlignSchema.default('start'),   // how content aligns within this axis
     sizeMode: SizeModeInputSchema.default('px'),
+    gap: z.number().optional(),            // gap size in layout direction
+    gapMode: GapModeSchema.optional(),     // where gaps are applied (default: 'between')
 });
 export type AxisDefInput = z.input<typeof AxisDefInputSchema>;
 
@@ -62,6 +76,8 @@ export const AxisDefSchema = z.object({
     max: z.number().optional(),
     align: AlignSchema.default('start'),
     sizeMode: SizeModeSchema.default('px'),
+    gap: z.number().optional(),            // gap size in layout direction
+    gapMode: GapModeSchema.optional(),     // where gaps are applied (default: 'between')
 });
 export type AxisDef = z.infer<typeof AxisDefSchema>;
 
@@ -249,6 +265,7 @@ export type BoxLeafConfig = z.input<typeof BoxLeafConfigSchema>;
 export const BoxListConfigSchema = BaseBoxConfigSchema.extend({
     direction: DirectionSchema.default('horizontal'),
     gap: z.number().default(0),
+    gapMode: GapModeSchema.default('between'),
 });
 // Use z.input for config types (what user provides)
 export type BoxListConfig = z.input<typeof BoxListConfigSchema>;
