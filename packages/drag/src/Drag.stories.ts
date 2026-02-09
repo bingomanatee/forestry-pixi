@@ -12,7 +12,7 @@ const meta: Meta<DragArgs> = {
         wrapper.style.width = '100%';
         wrapper.style.height = '600px';
         wrapper.style.position = 'relative';
-        let dragStore;
+        let dragStore: DragStore;
         // Create PixiJS app
         const app = new Application();
         app.init({

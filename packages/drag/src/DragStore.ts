@@ -33,6 +33,7 @@ export interface DragStoreConfig {
 export class DragStore extends TickerForest<DragStoreValue> {
     private callbacks: DragCallbacks = {};
     private app: Application;
+    #terminate: () => void = () => {};
 
     constructor(config: DragStoreConfig) {
         super(
@@ -127,21 +128,14 @@ export class DragStore extends TickerForest<DragStoreValue> {
      * Remove event listeners
      */
     private removeEventListeners() {
-        if (this.onDragMove) {
-            this.app.stage.off('pointermove', this.onDragMove);
-            this.onDragMove = undefined;
-        }
-        if (this.onDragEnd) {
-            this.app.stage.off('pointerup', this.onDragEnd);
-            this.app.stage.off('pointerupoutside', this.onDragEnd);
-            this.onDragEnd = undefined;
-        }
+        this.#terminate();
     }
 
     /**
      * Start dragging an item
      */
     startDrag(itemId: string, clientX: number, clientY: number, itemX: number = 0, itemY: number = 0) {
+       this.removeEventListeners(); // on the off chance we have "overlapping drags" terminate any current drag.
         this.mutate(draft => {
             draft.isDragging = true;
             draft.draggedItemId = itemId;
@@ -157,15 +151,14 @@ export class DragStore extends TickerForest<DragStoreValue> {
         });
         this.queueResolve();
 
-        const self = this;
         // Create event handlers
         const onDragMove = (moveEvent: FederatedPointerEvent) => {
-            self.updateDrag(moveEvent.global.x, moveEvent.global.y);
+            this.updateDrag(moveEvent.global.x, moveEvent.global.y);
         };
 
         const onDragEnd = () => {
-            self.endDrag();
-            self.removeEventListeners();
+            this.endDrag();
+            this.removeEventListeners();
         };
 
         // Attach listeners to stage
@@ -173,6 +166,14 @@ export class DragStore extends TickerForest<DragStoreValue> {
         this.app.stage.on('pointermove', onDragMove);
         this.app.stage.on('pointerup', onDragEnd);
         this.app.stage.on('pointerupoutside', onDragEnd);
+
+        // Store terminator that cleans up and resets itself
+        this.#terminate = () => {
+            this.app.stage.off('pointermove', onDragMove);
+            this.app.stage.off('pointerup', onDragEnd);
+            this.app.stage.off('pointerupoutside', onDragEnd);
+            this.#terminate = () => {};
+        };
     }
 
     /**
