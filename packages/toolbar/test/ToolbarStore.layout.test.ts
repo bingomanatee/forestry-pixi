@@ -137,4 +137,119 @@ describe('ToolbarStore layout dimensions', () => {
     expect(toolbar.rect.width).toBe(expectedWidth);
     expect(toolbar.rect.height).toBe(expectedHeight);
   });
+
+  it('applies uniform spacing between vertically stacked buttons with different heights', () => {
+    const { app, flushTicker } = createMockApplication();
+    const spacing = 12;
+    const padding = 8;
+    const styleTree = fromJSON({
+      button: {
+        padding: {
+          '$*': { x: 4, y: 4 },
+        },
+        icon: {
+          '$*': { size: { x: 40, y: 40 }, alpha: 1 },
+        },
+        big: {
+          icon: {
+            '$*': { size: { x: 64, y: 64 }, alpha: 1 },
+          },
+        },
+      },
+    });
+
+    const toolbar = new ToolbarStore({
+      id: 'toolbar-vertical-variable-heights',
+      orientation: 'vertical',
+      spacing,
+      padding,
+      style: styleTree,
+      buttons: [
+        { id: 'one', mode: 'icon' },
+        { id: 'two', mode: 'icon', variant: 'big' },
+        { id: 'three', mode: 'icon' },
+      ],
+    }, app);
+
+    toolbar.kickoff();
+    flushTicker();
+
+    const [one, two, three] = toolbar.getButtons();
+
+    expect(one.rect.height).toBe(48);
+    expect(two.rect.height).toBe(72);
+    expect(three.rect.height).toBe(48);
+
+    expect(one.rect.y).toBe(0);
+    expect(two.rect.y).toBe(one.rect.height + spacing);
+    expect(three.rect.y).toBe(one.rect.height + spacing + two.rect.height + spacing);
+
+    const expectedToolbarHeight =
+      one.rect.height
+      + spacing
+      + two.rect.height
+      + spacing
+      + three.rect.height
+      + padding * 2;
+    expect(toolbar.rect.height).toBe(expectedToolbarHeight);
+  });
+
+  it('reflows vertical positions when a child button height changes after initial layout', () => {
+    const { app, flushTicker } = createMockApplication();
+    const spacing = 10;
+    const padding = 8;
+    const styleTree = fromJSON({
+      button: {
+        padding: {
+          '$*': { x: 4, y: 4 },
+        },
+        icon: {
+          '$*': { size: { x: 40, y: 40 }, alpha: 1 },
+          '$hover': { size: { x: 80, y: 80 }, alpha: 1 },
+        },
+      },
+    });
+
+    const toolbar = new ToolbarStore({
+      id: 'toolbar-vertical-reflow',
+      orientation: 'vertical',
+      spacing,
+      padding,
+      style: styleTree,
+      buttons: [
+        { id: 'one', mode: 'icon' },
+        { id: 'two', mode: 'icon' },
+        { id: 'three', mode: 'icon' },
+      ],
+    }, app);
+
+    toolbar.kickoff();
+    flushTicker();
+
+    const [one, two, three] = toolbar.getButtons();
+
+    const initialOneHeight = one.rect.height;
+    const initialTwoHeight = two.rect.height;
+    const initialThreeY = three.rect.y;
+    expect(initialOneHeight).toBe(48);
+    expect(initialTwoHeight).toBe(48);
+    expect(initialThreeY).toBe(initialOneHeight + spacing + initialTwoHeight + spacing);
+
+    two.setHovered(true);
+    flushTicker();
+
+    const hoveredTwoHeight = two.rect.height;
+    const expectedThreeY = one.rect.height + spacing + hoveredTwoHeight + spacing;
+    const expectedToolbarHeight =
+      one.rect.height
+      + spacing
+      + hoveredTwoHeight
+      + spacing
+      + three.rect.height
+      + padding * 2;
+
+    expect(hoveredTwoHeight).toBe(88);
+    expect(three.rect.y).toBe(expectedThreeY);
+    expect(toolbar.rect.height).toBe(expectedToolbarHeight);
+  });
 });

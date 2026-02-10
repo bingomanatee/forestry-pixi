@@ -11,9 +11,17 @@
       "padding": {
         "$*": { "x": 6, "y": 10 }
       },
+      "iconGap": {
+        "$*": 6
+      },
       "icon": {
         "$*": { "size": { "x": 70, "y": 72 }, "alpha": 1 },
         "$hover": { "size": { "x": 74, "y": 76 }, "alpha": 1 }
+      },
+      "label": {
+        "fontSize": {
+          "$*": 10
+        }
       }
     },
     "text": {

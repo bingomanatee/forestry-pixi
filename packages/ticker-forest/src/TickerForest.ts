@@ -90,6 +90,7 @@ export abstract class TickerForest<T> extends Forest<T> {
     protected abstract clearDirty(): void;
 
     #resolveQueued = false;
+    #requeueAfterTick = false;
 
     /**
      * Queue a resolve operation for the next ticker frame.
@@ -101,7 +102,12 @@ export abstract class TickerForest<T> extends Forest<T> {
             console.warn('attempt to queueResolve without application');
             return;
         }
-        if (!this.#resolveQueued && this.application) {
+        if (this.#resolveQueued) {
+            // A resolve is already queued or currently executing; request one more pass.
+            this.#requeueAfterTick = true;
+            return;
+        }
+        if (this.application) {
             this.application.ticker.addOnce(this.$.onTick, this);
             this.#resolveQueued = true;
         }
@@ -126,6 +132,10 @@ export abstract class TickerForest<T> extends Forest<T> {
             this.clearDirty();
         }
         this.#resolveQueued = false;
+        if (this.#requeueAfterTick) {
+            this.#requeueAfterTick = false;
+            this.queueResolve();
+        }
     };
 
     /**

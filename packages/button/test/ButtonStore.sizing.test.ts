@@ -172,6 +172,53 @@ describe('ButtonStore sizing', () => {
         button.cleanup();
     });
 
+    it('distributes iconVertical children with iconGap on the y axis', () => {
+        const textMetricsSpy = vi
+            .spyOn(CanvasTextMetrics, 'measureText')
+            .mockImplementation((text: string, style: { fontSize?: number }) => {
+                const fontSize = style.fontSize ?? 13;
+                return {
+                    width: text.length * fontSize,
+                    height: fontSize * TEXT_HEIGHT_FACTOR,
+                } as any;
+            });
+
+        const {app, flushTicker} = createMockApplication();
+        const styleTree = createStyleTree();
+        const labelText = 'ABCD';
+        const button = new ButtonStore(
+            {id: 'icon-vertical-layout', mode: 'iconVertical', label: labelText},
+            styleTree,
+            app
+        );
+
+        button.kickoff();
+        flushTicker();
+
+        const iconGap = getStyleNumber(styleTree, ['button', 'iconVertical', 'iconGap']);
+        const paddingX = getStyleNumber(styleTree, ['button', 'iconVertical', 'padding', 'x']);
+        const paddingY = getStyleNumber(styleTree, ['button', 'iconVertical', 'padding', 'y']);
+        const iconSizeX = getStyleNumber(styleTree, ['button', 'iconVertical', 'icon', 'size', 'x']);
+        const iconSizeY = getStyleNumber(styleTree, ['button', 'iconVertical', 'icon', 'size', 'y']);
+        const labelFontSize = getStyleNumber(styleTree, ['button', 'iconVertical', 'label', 'fontSize']);
+
+        const [iconChild, labelChild] = button.children;
+        const expectedLabelWidth = labelText.length * labelFontSize;
+        const expectedLabelHeight = labelFontSize * TEXT_HEIGHT_FACTOR;
+
+        expect(iconChild.rect.y).toBe(0);
+        expect(labelChild.rect.y).toBe(iconChild.rect.height + iconGap);
+
+        const expectedWidth = Math.max(iconSizeX, expectedLabelWidth) + paddingX * 2;
+        const expectedHeight = iconSizeY + iconGap + expectedLabelHeight + paddingY * 2;
+
+        expect(button.rect.width).toBe(expectedWidth);
+        expect(button.rect.height).toBe(expectedHeight);
+
+        button.cleanup();
+        textMetricsSpy.mockRestore();
+    });
+
     it('computes text mode size with mocked text metrics (no browser canvas required)', () => {
         const textMetricsSpy = vi
             .spyOn(CanvasTextMetrics, 'measureText')

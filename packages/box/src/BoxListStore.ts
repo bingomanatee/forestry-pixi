@@ -1,4 +1,11 @@
 import { Application, ContainerOptions } from 'pixi.js';
+import {
+    combineLatest,
+    distinctUntilChanged,
+    map,
+    startWith,
+    type Subscription
+} from 'rxjs';
 import { BoxStore } from './BoxStore';
 import type { AxisDef, BoxListConfig, BoxProps, Direction, GapMode } from './types';
 
@@ -21,6 +28,8 @@ export class BoxListStore extends BoxStore {
     #direction: Direction;
     #gap: number;
     #gapMode: GapMode;
+    #childrenDimensionSubscription?: Subscription;
+    #childrenDimensionSubscriptionKey?: string;
 
     constructor(
         config: BoxListConfig,
@@ -61,10 +70,56 @@ export class BoxListStore extends BoxStore {
         this.markDirty();
     }
 
+    #clearChildrenDimensionSubscription(): void {
+        this.#childrenDimensionSubscription?.unsubscribe();
+        this.#childrenDimensionSubscription = undefined;
+        this.#childrenDimensionSubscriptionKey = undefined;
+    }
+
+    #getChildrenDimensionSubscriptionKey(): string {
+        return [
+            this.value.xDef.sizeMode,
+            this.value.yDef.sizeMode,
+            ...this.#children.map(child => child.id),
+        ].join('|');
+    }
+
+    #syncChildrenDimensionSubscription(): void {
+        const hasHugAxis = this.value.xDef.sizeMode === 'hug' || this.value.yDef.sizeMode === 'hug';
+        const nextKey = this.#getChildrenDimensionSubscriptionKey();
+
+        if (!hasHugAxis || this.#children.length === 0) {
+            this.#clearChildrenDimensionSubscription();
+            return;
+        }
+
+        if (this.#childrenDimensionSubscriptionKey === nextKey) {
+            return;
+        }
+
+        this.#clearChildrenDimensionSubscription();
+
+        const childrenSizeStreams = this.#children.map((child) => {
+            const initialSize: [number, number] = [child.value.width, child.value.height];
+            return child.$subject.pipe(
+                map((value): [number, number] => [value.width, value.height]),
+                distinctUntilChanged(([prevW, prevH], [nextW, nextH]) => prevW === nextW && prevH === nextH),
+                startWith(initialSize),// may not be necessary
+            );
+        });
+
+        this.#childrenDimensionSubscription = combineLatest(childrenSizeStreams).subscribe(
+            () => {
+            this.markDirty();
+        });
+        this.#childrenDimensionSubscriptionKey = nextKey;
+    }
+
     addChild(child: BoxStore): void {
         child.setParent(this);
         this.#children.push(child);
         this._contentContainer.addChild(child.container);
+        this.#syncChildrenDimensionSubscription();
         this.markDirty();
     }
 
@@ -74,6 +129,7 @@ export class BoxListStore extends BoxStore {
             this.#children.splice(index, 1);
             child.setParent(null);
             this._contentContainer.removeChild(child.container);
+            this.#syncChildrenDimensionSubscription();
             this.markDirty();
         }
     }
@@ -301,11 +357,13 @@ export class BoxListStore extends BoxStore {
     }
 
     protected override resolve(): void {
+        this.#syncChildrenDimensionSubscription();
         this.#layoutChildren();
         super.resolve();
     }
 
     override cleanup(): void {
+        this.#clearChildrenDimensionSubscription();
         for (const child of this.#children) {
             child.cleanup();
         }

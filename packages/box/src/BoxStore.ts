@@ -163,8 +163,23 @@ export class BoxStore extends TickerForest<BoxState> {
      * Update padding
      */
     setPadding(padding: Partial<Padding>): void {
+        const current = this.value.padding;
+        const next: Padding = {
+            top: padding.top ?? current.top,
+            right: padding.right ?? current.right,
+            bottom: padding.bottom ?? current.bottom,
+            left: padding.left ?? current.left,
+        };
+        if (
+            next.top === current.top
+            && next.right === current.right
+            && next.bottom === current.bottom
+            && next.left === current.left
+        ) {
+            return;
+        }
         this.mutate(draft => {
-            draft.padding = { ...draft.padding, ...padding } as Padding;
+            draft.padding = next;
             draft.isDirty = true;
         });
         this.queueResolve();
@@ -174,6 +189,10 @@ export class BoxStore extends TickerForest<BoxState> {
      * Update box position (called by parent for layout)
      */
     setPosition(x: number, y: number): void {
+        const { x: currentX, y: currentY } = this.value;
+        if (x === currentX && y === currentY) {
+            return;
+        }
         this.mutate(draft => {
             draft.x = x;
             draft.y = y;
@@ -186,6 +205,10 @@ export class BoxStore extends TickerForest<BoxState> {
      * Update box size
      */
     setSize(width: number, height: number): void {
+        const { width: currentWidth, height: currentHeight } = this.value;
+        if (width === currentWidth && height === currentHeight) {
+            return;
+        }
         this.mutate(draft => {
             draft.width = width;
             draft.height = height;
@@ -301,7 +324,7 @@ export class BoxStore extends TickerForest<BoxState> {
     }
 
     protected resolve(): void {
-        const { x, y } = this.value;
+        const { x, y, width, height } = this.value;
 
         // Update container position
         this._container.position.set(x, y);
@@ -324,4 +347,3 @@ export class BoxStore extends TickerForest<BoxState> {
         this._container.destroy({ children: true });
     }
 }
-
