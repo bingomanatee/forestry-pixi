@@ -1,48 +1,46 @@
 {
-  "toolbar": {
-    "button": {
-      "icon": {
-        "$*": {
-          "size": { "x": 32, "y": 32 },
-          "alpha": 1
-        },
-        "$hover": {
-          "size": { "x": 32, "y": 32 },
-          "alpha": 1
-        },
-        "$disabled": {
-          "size": { "x": 32, "y": 32 },
-          "alpha": 0.5
-        }
+  "button": {
+    "icon": {
+      "$*": {
+        "size": { "x": 80, "y": 80 },
+        "alpha": 1
       },
-      "padding": {
-        "$*": { "x": 4, "y": 4 }
+      "$hover": {
+        "size": { "x": 80, "y": 80 },
+        "alpha": 1
       },
-      "stroke": {
-        "$*": {
-          "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
-          "alpha": 1,
-          "width": 1
-        },
-        "$hover": {
-          "color": { "r": 0.7, "g": 0.7, "b": 0.7 },
-          "alpha": 1,
-          "width": 1
-        },
-        "$disabled": {
-          "color": { "r": 0.85, "g": 0.85, "b": 0.85 },
-          "alpha": 0.5,
-          "width": 1
-        }
-      },
-      "fill": {
-        "$disabled": {
-          "color": { "r": 0.9, "g": 0.9, "b": 0.9 },
-          "alpha": 0.3
-        }
+      "$disabled": {
+        "size": { "x": 80, "y": 80 },
+        "alpha": 0.5
       }
     },
-    "inlineButton": {
+    "padding": {
+      "$*": { "x": 4, "y": 4 }
+    },
+    "stroke": {
+      "$*": {
+        "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
+        "alpha": 1,
+        "width": 1
+      },
+      "$hover": {
+        "color": { "r": 0.7, "g": 0.7, "b": 0.7 },
+        "alpha": 1,
+        "width": 1
+      },
+      "$disabled": {
+        "color": { "r": 0.85, "g": 0.85, "b": 0.85 },
+        "alpha": 0.5,
+        "width": 1
+      }
+    },
+    "fill": {
+      "$disabled": {
+        "color": { "r": 0.9, "g": 0.9, "b": 0.9 },
+        "alpha": 0.3
+      }
+    },
+    "inline": {
       "padding": {
         "$*": { "x": 12, "y": 6 }
       },
@@ -113,7 +111,7 @@
         }
       }
     },
-    "textButton": {
+    "text": {
       "padding": {
         "$*": { "x": 12, "y": 6 }
       },
@@ -167,22 +165,37 @@
         }
       }
     },
-    "label": {
-      "fontSize": {
-        "$*": 12
+    "iconVertical": {
+      "icon": {
+        "$*": {
+          "size": { "x": 80, "y": 80 },
+          "alpha": 1
+        },
+        "$hover": {
+          "size": { "x": 80, "y": 80 },
+          "alpha": 1
+        },
+        "$disabled": {
+          "size": { "x": 80, "y": 80 },
+          "alpha": 0.5
+        }
       },
-      "padding": {
-        "$*": 4
-      },
-      "color": {
-        "$*": { "r": 0, "g": 0, "b": 0 },
-        "$hover": { "r": 0, "g": 0, "b": 0 }
-      },
-      "alpha": {
-        "$*": 0.5,
-        "$hover": 1
+      "label": {
+        "fontSize": {
+          "$*": 12
+        },
+        "padding": {
+          "$*": 4
+        },
+        "color": {
+          "$*": { "r": 0, "g": 0, "b": 0 },
+          "$hover": { "r": 0, "g": 0, "b": 0 }
+        },
+        "alpha": {
+          "$*": 0.5,
+          "$hover": 1
+        }
       }
     }
   }
 }
-

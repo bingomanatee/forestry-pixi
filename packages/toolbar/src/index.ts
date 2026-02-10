@@ -1,4 +1,4 @@
 export { ToolbarStore } from './ToolbarStore';
-export { ToolbarButtonStore } from './ToolbarButtonStore';
+export { ButtonStore } from '@forestry-pixi/button';
 export * from './types';
 

@@ -1,7 +1,7 @@
-import { ListStore, CellStore, type ListStoreConfig, type Padding, type CellConfig } from '@forestry-pixi/list';
+import { BoxListStore, type Padding } from '@forestry-pixi/box';
+import { ButtonStore } from '@forestry-pixi/button';
 import { StyleTree, fromJSON } from '@forestry-pixi/style-tree';
 import { Application } from 'pixi.js';
-import { ToolbarButtonStore } from './ToolbarButtonStore';
 import type { ToolbarConfig, ToolbarButtonConfig } from './types';
 import { ToolbarConfigSchema } from './types';
 import defaultStyles from './styles/toolbar.default.json';
@@ -23,23 +23,13 @@ function normalizePadding(padding: number | { top?: number; right?: number; bott
 }
 
 /**
- * ToolbarStore - A ListStore-based toolbar that manages ToolbarButtonStore cells.
- * Extends ListStore for layout management and uses StyleTree for button styling.
- * Buttons are cells - ListStore handles all layout via gap.
+ * ToolbarStore - A BoxListStore-based toolbar that manages ButtonStore children.
+ * Uses BoxListStore for layout management and StyleTree for button styling.
  */
-export class ToolbarStore extends ListStore {
-  #styleTree!: StyleTree;
-  #toolbarConfig!: ToolbarConfig;
-  #bitmapFontName?: string;
-  #buttonConfigs!: Map<string, ToolbarButtonConfig>;
-
-  // Static storage for constructor params (needed because createCell is called during super())
-  static #pendingInit?: {
-    styleTree: StyleTree;
-    toolbarConfig: ToolbarConfig;
-    bitmapFontName?: string;
-    buttonConfigs: Map<string, ToolbarButtonConfig>;
-  };
+export class ToolbarStore extends BoxListStore {
+  #styleTree: StyleTree;
+  #toolbarConfig: ToolbarConfig;
+  #buttons: Map<string, ButtonStore> = new Map();
 
   constructor(config: ToolbarConfig, app: Application) {
     // Parse config through schema to apply defaults
@@ -48,118 +38,94 @@ export class ToolbarStore extends ListStore {
     // Use provided StyleTree or load default styles
     const styleTree = parsedConfig.style ?? fromJSON(defaultStyles);
 
-    // Create a map of button configs by id for createCell to use
-    const buttonConfigsMap = new Map<string, ToolbarButtonConfig>();
-    for (const btn of parsedConfig.buttons) {
-      buttonConfigsMap.set(btn.id, btn);
-    }
+    // Convert toolbar config to BoxListStore config
+    const padding = normalizePadding(parsedConfig.padding);
 
-    // Store in static so createCell can access during super()
-    ToolbarStore.#pendingInit = {
-      styleTree,
-      toolbarConfig: parsedConfig,
-      bitmapFontName: parsedConfig.bitmapFont,
-      buttonConfigs: buttonConfigsMap,
+    // Determine sizing mode
+    const xDef = {
+      sizeMode: (parsedConfig.fixedSize ? 'px' : 'hug') as 'px' | 'hug',
+      size: parsedConfig.width ?? 0
     };
 
-    // Convert button configs to cell configs for ListStore
-    const cellConfigs: CellConfig[] = parsedConfig.buttons.map(btn => ({
-      id: btn.id,
-      variant: btn.variant,
-    }));
+    const yDef = {
+      sizeMode: (parsedConfig.fixedSize ? 'px' : 'hug') as 'px' | 'hug',
+      size: parsedConfig.height ?? 0
+    };
 
-    // Convert toolbar config to ListStore config
-    const listConfig: ListStoreConfig = {
+    super({
       id: parsedConfig.id ?? 'toolbar',
+      xDef,
+      yDef,
       direction: parsedConfig.orientation === 'vertical' ? 'vertical' : 'horizontal',
-      width: parsedConfig.width ?? 400,
-      height: parsedConfig.height ?? 50,
-      cells: cellConfigs,
-      mainAlign: 'start',
-      crossAlign: 'center',
-      style: {
-        gap: parsedConfig.spacing,
-        background: parsedConfig.background,
-      },
-      padding: normalizePadding(parsedConfig.padding),
-      autoSize: !(parsedConfig.fixedSize ?? false),
-    };
+      gap: parsedConfig.spacing ?? 8,
+      gapMode: 'between',
+      padding,
+      style: parsedConfig.background,
+    }, app);
 
-    super(listConfig, app);
+    this.#styleTree = styleTree;
+    this.#toolbarConfig = parsedConfig;
 
-    // Now copy from static to instance
-    this.#styleTree = ToolbarStore.#pendingInit.styleTree;
-    this.#toolbarConfig = ToolbarStore.#pendingInit.toolbarConfig;
-    this.#bitmapFontName = ToolbarStore.#pendingInit.bitmapFontName;
-    this.#buttonConfigs = ToolbarStore.#pendingInit.buttonConfigs;
-
-    // Clear static storage
-    ToolbarStore.#pendingInit = undefined;
+    // Create buttons
+    for (const buttonConfig of parsedConfig.buttons) {
+      this.#createButton(buttonConfig, parsedConfig.bitmapFont);
+    }
   }
 
   /**
-   * Override createCell to create ToolbarButtonStore instances instead of CellStore.
-   * This is called by ListStore during initialization.
+   * Create a button from config
    */
-  protected createCell(cellConfig: CellConfig): CellStore {
-    // Get the pending init data (during super()) or instance data (after super())
-    const initData = ToolbarStore.#pendingInit ?? {
-      styleTree: this.#styleTree,
-      bitmapFontName: this.#bitmapFontName,
-      buttonConfigs: this.#buttonConfigs,
-    };
+  #createButton(buttonConfig: ToolbarButtonConfig, bitmapFontName?: string): ButtonStore {
+    const button = new ButtonStore({
+      ...buttonConfig,
+      bitmapFont: buttonConfig.bitmapFont ?? bitmapFontName,
+    }, this.#styleTree, this.application);
 
-    const buttonConfig = initData.buttonConfigs.get(cellConfig.id);
-    if (!buttonConfig) {
-      // Fallback to default cell if no button config found
-      return super.createCell(cellConfig);
-    }
+    this.addChild(button);
 
-    return new ToolbarButtonStore(
-      buttonConfig,
-      this.application,
-      this,
-      initData.styleTree,
-      initData.bitmapFontName
-    );
+    // Ensure the button computes its intrinsic size.
+    button.kickoff();
+
+    // Re-layout toolbar after button resolve tick so hug sizing uses final child dimensions.
+    this.application.ticker.addOnce(() => {
+      this.markDirty();
+    }, this);
+
+    this.#buttons.set(buttonConfig.id, button);
+    return button;
   }
 
   /**
    * Add a button to the toolbar
    */
-  addButton(buttonConfig: ToolbarButtonConfig): ToolbarButtonStore {
-    // Store the button config so createCell can find it
-    this.#buttonConfigs.set(buttonConfig.id, buttonConfig);
-
-    // Use ListStore's addCell which will call our createCell override
-    const cell = this.addCell({
-      id: buttonConfig.id,
-      variant: buttonConfig.variant,
-    });
-
-    return cell as ToolbarButtonStore;
+  addButton(buttonConfig: ToolbarButtonConfig): ButtonStore {
+    return this.#createButton(buttonConfig, this.#toolbarConfig.bitmapFont);
   }
 
   /**
    * Remove a button by id
    */
   removeButton(id: string): void {
-    this.#buttonConfigs.delete(id);
-    this.removeCell(id);
+    const button = this.#buttons.get(id);
+    if (button) {
+      this.removeChild(button);
+      this.#buttons.delete(id);
+      button.cleanup();
+    }
   }
 
   /**
    * Get a button by id
    */
-  getButton(id: string): ToolbarButtonStore | undefined {
-    return this.getCell(id) as ToolbarButtonStore | undefined;
+  getButton(id: string): ButtonStore | undefined {
+    return this.#buttons.get(id);
   }
 
   /**
    * Get all buttons
    */
-  getButtons(): ToolbarButtonStore[] {
-    return Array.from(this.cells.values()) as ToolbarButtonStore[];
+  getButtons(): ButtonStore[] {
+    return Array.from(this.#buttons.values());
   }
 
   /**
@@ -175,5 +141,12 @@ export class ToolbarStore extends ListStore {
   get toolbarConfig(): ToolbarConfig {
     return this.#toolbarConfig;
   }
-}
 
+  override cleanup(): void {
+    for (const button of this.#buttons.values()) {
+      button.cleanup();
+    }
+    this.#buttons.clear();
+    super.cleanup();
+  }
+}
