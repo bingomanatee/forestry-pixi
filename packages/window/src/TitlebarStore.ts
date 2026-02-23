@@ -72,7 +72,7 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
                 }
                 return next
             }
-        }, app);
+        }, { app });
         if (!this.application) {
             const parent = this.$parent as WindowStore | undefined;
             if (parent?.application) {
@@ -292,4 +292,3 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
         }
     }
 }
-

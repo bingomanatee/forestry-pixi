@@ -45,7 +45,7 @@ export class WindowStore extends TickerForest<WindowDef> {
     }
 
     constructor(config: StoreParams<WindowDef>, app: Application) {
-        super(config, app);
+        super(config, { app });
         this.#initTitlebar();
         if (app) {
             this.kickoff();
@@ -60,7 +60,7 @@ export class WindowStore extends TickerForest<WindowDef> {
         // @ts-ignore
         this.#titlebarStore = this.$branch(['titlebar'], {
             subclass: TitlebarStore,
-        }, this.application) as unknown as TitlebarStore;
+        }, this.application!) as unknown as TitlebarStore;
         this.#titlebarStore.application = this.application;
         this.#titlebarStore.set('isDirty', true);
         const self = this;
@@ -131,7 +131,7 @@ export class WindowStore extends TickerForest<WindowDef> {
         const {dragFromTitlebar} = this.value;
 
         this.#dragStore = new DragStore({
-            app: this.application,
+            app: this.application!,
             callbacks: {
                 onDragStart() {
                 },
@@ -407,7 +407,7 @@ export class WindowStore extends TickerForest<WindowDef> {
                 container: this.#rootContainer,
                 handleContainer: handlesContainer,
                 rect: new Rectangle(x, y, width, height),
-                app: this.application,
+                app: this.application!,
                 mode: resizeMode || 'ONLY_CORNER',
                 size: 8,
                 color: HANDLE_COLOR,

@@ -582,10 +582,17 @@ export class ButtonStore extends TickerForest<ButtonState> {
             node.tree.setHeightPx(node.height);
         }
 
-        this.#tree.setWidthPx(contentWidth + (paddingX * 2));
-        this.#tree.setHeightPx(contentHeight + (paddingY * 2));
+        const naturalWidth = contentWidth + (paddingX * 2);
+        const naturalHeight = contentHeight + (paddingY * 2);
+        this.#tree.setWidthPx(naturalWidth);
+        this.#tree.setHeightPx(naturalHeight);
 
-        this.#contentContainer.position.set(paddingX, paddingY);
+        const resolvedWidth = this.#tree.width;
+        const resolvedHeight = this.#tree.height;
+
+        const contentOffsetX = paddingX + Math.max(0, (resolvedWidth - naturalWidth) / 2);
+        const contentOffsetY = paddingY + Math.max(0, (resolvedHeight - naturalHeight) / 2);
+        this.#contentContainer.position.set(contentOffsetX, contentOffsetY);
     }
 
     #syncBackground(): void {
@@ -694,8 +701,57 @@ export class ButtonStore extends TickerForest<ButtonState> {
     }
 
     setPosition(x: number, y: number): void {
+        if (this.#tree.value.area.x === x && this.#tree.value.area.y === y) {
+            return;
+        }
         this.#tree.setPosition(x, y);
         this.markDirty();
+    }
+
+    setMinSize(minWidth?: number, minHeight?: number): boolean {
+        const normalize = (value: number | undefined): number | undefined => {
+            if (value === undefined) {
+                return undefined;
+            }
+            if (!Number.isFinite(value) || value < 0) {
+                throw new Error(`${this.id}: min size must be finite and >= 0`);
+            }
+            return value;
+        };
+
+        const nextMinWidth = normalize(minWidth);
+        const nextMinHeight = normalize(minHeight);
+        const current = this.#tree.value.constrain;
+        const currentMinWidth = current?.x?.min;
+        const currentMinHeight = current?.y?.min;
+
+        if (currentMinWidth === nextMinWidth && currentMinHeight === nextMinHeight) {
+            return false;
+        }
+
+        this.#tree.mutate((draft) => {
+            const xConstrain = draft.constrain?.x ? { ...draft.constrain.x } : {};
+            const yConstrain = draft.constrain?.y ? { ...draft.constrain.y } : {};
+
+            xConstrain.min = nextMinWidth;
+            yConstrain.min = nextMinHeight;
+
+            const hasX = xConstrain.min !== undefined || xConstrain.max !== undefined;
+            const hasY = yConstrain.min !== undefined || yConstrain.max !== undefined;
+
+            if (!hasX && !hasY) {
+                draft.constrain = undefined;
+                return;
+            }
+
+            draft.constrain = {
+                ...(hasX ? { x: xConstrain } : {}),
+                ...(hasY ? { y: yConstrain } : {}),
+            };
+        });
+
+        this.markDirty();
+        return true;
     }
 
     getConfig(): ButtonConfig {
