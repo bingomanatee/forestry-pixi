@@ -1,4 +1,4 @@
-import { TickerForest } from '@wonderlandlabs-pixi-ux/ticker-forest';
+import { TickerForest } from '@wonderlandlabs-pixi-ux/ticker-forest/dist/TickerForest';
 import {
     Application,
     Container,

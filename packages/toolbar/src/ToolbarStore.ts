@@ -1,6 +1,9 @@
-import { BoxListStore, type Padding } from '@wonderlandlabs-pixi-ux/box';
-import { ButtonStore } from '@wonderlandlabs-pixi-ux/button';
-import { StyleTree, fromJSON } from '@wonderlandlabs-pixi-ux/style-tree';
+import { BoxListStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxListStore';
+import type { Padding } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/types';
+import { SIZE_MODE_INPUT } from '@wonderlandlabs-pixi-ux/box/dist/constants';
+import { ButtonStore } from '@wonderlandlabs-pixi-ux/button/dist/ButtonStore';
+import { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree/dist/StyleTree';
+import { fromJSON } from '@wonderlandlabs-pixi-ux/style-tree/dist/digest';
 import { Application } from 'pixi.js';
 import type { ToolbarConfig, ToolbarButtonConfig } from './types';
 import { ToolbarConfigSchema } from './types';
@@ -43,12 +46,20 @@ export class ToolbarStore extends BoxListStore {
 
     // Determine sizing mode
     const xDef = {
-      sizeMode: (parsedConfig.fixedSize ? 'px' : 'hug') as 'px' | 'hug',
+      sizeMode: (
+        parsedConfig.fixedSize
+          ? SIZE_MODE_INPUT.PX
+          : SIZE_MODE_INPUT.HUG
+      ) as typeof SIZE_MODE_INPUT.PX | typeof SIZE_MODE_INPUT.HUG,
       size: parsedConfig.width ?? 0
     };
 
     const yDef = {
-      sizeMode: (parsedConfig.fixedSize ? 'px' : 'hug') as 'px' | 'hug',
+      sizeMode: (
+        parsedConfig.fixedSize
+          ? SIZE_MODE_INPUT.PX
+          : SIZE_MODE_INPUT.HUG
+      ) as typeof SIZE_MODE_INPUT.PX | typeof SIZE_MODE_INPUT.HUG,
       size: parsedConfig.height ?? 0
     };
 

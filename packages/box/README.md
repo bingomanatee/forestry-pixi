@@ -2,6 +2,11 @@
 
 Composable layout primitives for PixiJS containers.
 
+## Status
+
+- New tree/value model docs: `/Users/davidedelhart/Documents/repos/forestry-pixi/packages/box/README.BOX_VALUES.md`
+- Legacy BoxStore implementation files now live under: `/Users/davidedelhart/Documents/repos/forestry-pixi/packages/box/src/_deprecated`
+
 ## Installation
 
 ```bash
@@ -19,7 +24,7 @@ yarn add @wonderlandlabs-pixi-ux/box
 
 ```ts
 import { Application, Graphics } from 'pixi.js';
-import { BoxLeafStore } from '@wonderlandlabs-pixi-ux/box';
+import { BoxLeafStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxLeafStore';
 
 const app = new Application();
 await app.init({ width: 800, height: 600 });
@@ -50,7 +55,8 @@ card.kickoff();
 ## List Layout Example
 
 ```ts
-import { BoxListStore, BoxTextStore } from '@wonderlandlabs-pixi-ux/box';
+import { BoxListStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxListStore';
+import { BoxTextStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxTextStore';
 
 const row = new BoxListStore({
   id: 'row',

@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree';
-import { ButtonConfigSchema } from '@wonderlandlabs-pixi-ux/button';
-import { BoxStyleSchema, type BoxStyle } from '@wonderlandlabs-pixi-ux/box';
-export { RgbColorSchema, type RgbColor } from '@wonderlandlabs-pixi-ux/box';
+import type { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree/dist/StyleTree';
+import { ButtonConfigSchema } from '@wonderlandlabs-pixi-ux/button/dist/types';
+import { BoxStyleSchema, type BoxStyle } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/types';
+export { RgbColorSchema, type RgbColor } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/types';
 
 export const ToolbarButtonConfigSchema = ButtonConfigSchema;
 export type ToolbarButtonConfig = z.input<typeof ToolbarButtonConfigSchema>;

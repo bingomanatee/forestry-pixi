@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/html';
 import { Application, Graphics, Sprite, Assets, Spritesheet } from 'pixi.js';
-import { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree';
+import { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree/dist/StyleTree';
 import { ButtonStore } from './ButtonStore';
 
 interface ButtonArgs {
@@ -483,4 +483,3 @@ export const AllModes: Story = {
         return wrapper;
     },
 };
-

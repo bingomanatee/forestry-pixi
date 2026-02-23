@@ -4,6 +4,7 @@ import { BoxListStore } from './BoxListStore';
 import { BoxLeafStore } from './BoxLeafStore';
 import { BoxTextStore } from './BoxTextStore';
 import { uniformPadding } from './types';
+import { SIZE_MODE_INPUT } from '../constants';
 
 interface ProductCatalogArgs {
     cardWidth: number;
@@ -168,8 +169,8 @@ function createProductCard(
     const price = new BoxTextStore({
         id: `price-${product.id}`,
         text: product.price,
-        xDef: { size: 0, align: 'center', sizeMode: 'hug' },
-        yDef: { size: 0, align: 'center', sizeMode: 'hug' },
+        xDef: { size: 0, align: 'center', sizeMode: SIZE_MODE_INPUT.HUG },
+        yDef: { size: 0, align: 'center', sizeMode: SIZE_MODE_INPUT.HUG },
         padding: { top: 4, right: 8, bottom: 4, left: 8 },
         textStyle: { fontSize: 20, fill: 0x66ff66, fontWeight: 'bold' },
     }, app);
@@ -228,8 +229,8 @@ export const Catalog: Story = {
                 id: 'grid-container',
                 x: 40,
                 y: 40,
-                xDef: { size: 720, align: 'start', sizeMode: 'hug' },
-                yDef: { size: 620, align: 'start', sizeMode: 'hug' },
+                xDef: { size: 720, align: 'start', sizeMode: SIZE_MODE_INPUT.HUG },
+                yDef: { size: 620, align: 'start', sizeMode: SIZE_MODE_INPUT.HUG },
                 direction: 'vertical',
                 gap: args.gap,
             }, app);
@@ -238,7 +239,7 @@ export const Catalog: Story = {
             for (let row = 0; row < 2; row++) {
                 const rowContainer = new BoxListStore({
                     id: `row-${row}`,
-                    xDef: { size: 0, align: 'start', sizeMode: 'hug' },
+                    xDef: { size: 0, align: 'start', sizeMode: SIZE_MODE_INPUT.HUG },
                     yDef: { size: args.cardHeight, align: 'start', sizeMode: 'px' },
                     direction: 'horizontal',
                     gap: args.gap,

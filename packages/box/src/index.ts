@@ -1,7 +1,102 @@
-export { BoxStore } from './BoxStore';
-export { BoxLeafStore } from './BoxLeafStore';
-export { BoxListStore } from './BoxListStore';
-export { BoxTextStore, type BoxTextConfig } from './BoxTextStore';
+export { BoxStore } from './_deprecated/BoxStore';
+export { BoxLeafStore } from './_deprecated/BoxLeafStore';
+export { BoxListStore } from './_deprecated/BoxListStore';
+export { BoxTextStore, type BoxTextConfig } from './_deprecated/BoxTextStore';
+export {
+    AxisSchema as TreeAxisSchema,
+    DirectionSchema as TreeDirectionSchema,
+    BoxContentTypeSchema as TreeBoxContentTypeSchema,
+    BoxContentSchema as TreeBoxContentSchema,
+    AlignmentsSchema as TreeAlignmentsSchema,
+    AlignKeywordSchema as TreeAlignKeywordSchema,
+    AlignAliasSchema as TreeAlignAliasSchema,
+    AlignInputSchema as TreeAlignInputSchema,
+    XYPositionSchema as TreeXYPositionSchema,
+    BoxSizeSchema as TreeBoxSizeSchema,
+    AreaPivotKeywordSchema as TreeAreaPivotKeywordSchema,
+    AreaPivotAliasSchema as TreeAreaPivotAliasSchema,
+    AreaPivotInputSchema as TreeAreaPivotInputSchema,
+    AreaPivotSchema as TreeAreaPivotSchema,
+    BoxAreaSchema as TreeAreaSchema,
+    BoxAreaSchema as TreeRectSchema,
+    AxisAlignmentsSchema as TreeAxisAlignmentsSchema,
+    BoxAlignSchema as TreeAlignSchema,
+    AxisConstraintsByAxisSchema as TreeAxisConstraintsByAxisSchema,
+    BoxConstrainSchema as TreeConstrainSchema,
+    BoxTreeStateBaseSchema,
+    BoxTreeNodeStateSchema,
+    BoxTreeStateSchema,
+    BoxTreeNodeConfigSchema,
+    type BoxTreeConfig,
+    type BoxTreeState,
+    type Axis,
+    type Direction as TreeDirection,
+    type BoxContentType,
+    type BoxContent,
+    type Alignments,
+    type AlignKeyword,
+    type AlignAlias,
+    type AlignInput,
+    type XYPosition,
+    type BoxSize2D,
+    type AreaPivotKeyword,
+    type AreaPivotAlias,
+    type AreaPivotInput,
+    type AreaPivot,
+    type BoxArea,
+    type BoxRect,
+    type AxisAlignments,
+    type AxisConstraintsByAxis,
+    type BoxSize,
+    type AxisConstrain,
+    type BoxAlign,
+    type BoxConstrain,
+} from './types.boxtree';
+export { BoxTree, createBoxTreeState } from './BoxTree';
+export {
+    SizeModeSchema as TreeSizeModeSchema,
+    FractionalMeasurementModeSchema as TreeFractionalMeasurementModeSchema,
+    MeasurementRatioModeSchema as TreeMeasurementRatioModeSchema,
+    MeasurementInputModeSchema as TreeMeasurementInputModeSchema,
+    FractionalMeasurementValueSchema as TreeFractionalMeasurementValueSchema,
+    MeasurementRatioValueSchema as TreeMeasurementRatioValueSchema,
+    FractionalMeasurementBaseSchema as TreeFractionalMeasurementBaseSchema,
+    MeasurementRatioBaseSchema as TreeMeasurementRatioBaseSchema,
+    BaseMeasurementObjectSchema as TreeBaseMeasurementObjectSchema,
+    FractionalMeasurementObjectSchema as TreeFractionalMeasurementObjectSchema,
+    MeasurementConfigSchema as TreeMeasurementConfigSchema,
+    MeasurementSchema as TreeMeasurementSchema,
+    PxValueSchema as TreePxValueSchema,
+    AxisConstraintSchema as TreeAxisConstraintSchema,
+    type SizeMode as TreeSizeMode,
+    type FractionalMeasurementMode,
+    type MeasurementRatioMode,
+    type MeasurementInputMode,
+    type FractionalMeasurementValue,
+    type MeasurementRatioValue,
+    type FractionalMeasurementBase,
+    type MeasurementRatioBase,
+    type AlignLabel,
+    type MeasurementModeLabel,
+    type Measurement,
+    type PxValue,
+    type AxisConstraintLike,
+} from './types';
+export {
+    resolveMeasurement as resolveTreeMeasurement,
+    resolveMeasurementPx,
+    resolveConstraintValuePx,
+    applyAxisConstraints,
+} from './sizeUtils';
+export {
+    boxTreeToPixi,
+    boxTreeToSvg,
+    type BoxTreeToPixiNodeStyle,
+    type BoxTreeToPixiOptions,
+    type BoxTreeToSvgNodeStyle,
+    type BoxTreeToSvgOptions,
+} from './boxTreeRenderers';
+export { combinePaths, pathString, pathToString, type Path } from './pathUtils';
 export {
     // Schemas
     SizeModeSchema,
@@ -52,5 +147,4 @@ export {
     symmetricPadding,
     resolveMeasurement,
     resolveSizeValue,
-} from './types';
-
+} from './_deprecated/types';

@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import {type Application, CanvasTextMetrics} from 'pixi.js';
-import {fromJSON, type StyleTree} from '@wonderlandlabs-pixi-ux/style-tree';
+import {fromJSON} from '@wonderlandlabs-pixi-ux/style-tree/dist/digest';
+import type {StyleTree} from '@wonderlandlabs-pixi-ux/style-tree/dist/StyleTree';
 import {ButtonStore} from '../src/ButtonStore';
 import sizingStyles from './fixtures/button.sizing.styles.json';
 

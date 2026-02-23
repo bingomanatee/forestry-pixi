@@ -1,11 +1,15 @@
-import { BoxLeafStore, BoxListStore, BoxTextStore, type BoxStyle } from '@wonderlandlabs-pixi-ux/box';
-import type { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree';
+import { BoxListStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxListStore';
+import { BoxStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxStore';
+import { BoxTextStore } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/BoxTextStore';
+import type { BoxStyle } from '@wonderlandlabs-pixi-ux/box/dist/_deprecated/types';
+import { SIZE_MODE_INPUT } from '@wonderlandlabs-pixi-ux/box/dist/constants';
+import type { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree/dist/StyleTree';
 import { Application, Container, ContainerOptions, Sprite, type TextStyleOptions } from 'pixi.js';
 import type { ButtonConfig, ButtonMode, RgbColor } from './types';
 import { rgbToHex } from './types';
 
 type IconRef = {
-    box: BoxLeafStore;
+    box: BoxStore;
     sprite?: Sprite;
     container?: Container;
     role: 'left' | 'right';
@@ -31,7 +35,7 @@ export class ButtonStore extends BoxListStore {
 
     #leftIcon?: IconRef;
     #rightIcon?: IconRef;
-    #labelBox?: BoxTextStore;
+    #labelBox?: BoxStore;
 
     #lastRootStyleSig?: string;
     #lastLabelStyleSig?: string;
@@ -46,8 +50,8 @@ export class ButtonStore extends BoxListStore {
 
         super({
             id: config.id,
-            xDef: { sizeMode: 'hug' },
-            yDef: { sizeMode: 'hug' },
+            xDef: { sizeMode: SIZE_MODE_INPUT.HUG },
+            yDef: { sizeMode: SIZE_MODE_INPUT.HUG },
             direction: mode === 'iconVertical' ? 'vertical' : 'horizontal',
             gap: 0,
             gapMode: 'between',
@@ -99,51 +103,53 @@ export class ButtonStore extends BoxListStore {
         const sprite = isRight ? this.#config.rightSprite : this.#config.sprite;
         const container = isRight ? this.#config.rightIcon : this.#config.icon;
 
-        const box = new BoxLeafStore({
+        const box = new BoxStore({
             id: `${this.id}-${idSuffix}`,
-            xDef: { sizeMode: 'px', size: 0, align: 'center' },
-            yDef: { sizeMode: 'px', size: 0, align: 'center' },
+            kind: 'leaf',
+            xDef: { sizeMode: SIZE_MODE_INPUT.PX, size: 0, align: 'center' },
+            yDef: { sizeMode: SIZE_MODE_INPUT.PX, size: 0, align: 'center' },
             noMask: true,
         }, this.application);
-
-        if (sprite) {
-            sprite.anchor.set(0);
-            box.setContent(sprite);
-            return { box, sprite, role };
-        }
-
-        if (container) {
-            box.contentContainer.addChild(container);
-            return { box, container, role };
-        }
-
-        return { box, role };
+        return { box, sprite, container, role };
     }
 
     #createLabel(): BoxTextStore {
         return new BoxTextStore({
             id: `${this.id}-label`,
             text: this.#config.label,
-            xDef: { sizeMode: 'hug', align: 'center' },
-            yDef: { sizeMode: 'hug', align: 'center' },
+            xDef: { sizeMode: SIZE_MODE_INPUT.HUG, align: 'center' },
+            yDef: { sizeMode: SIZE_MODE_INPUT.HUG, align: 'center' },
             noMask: true,
         }, this.application);
     }
 
     #buildChildren(): void {
         if (this.#wantsLeftIcon) {
-            this.#leftIcon = this.#createIconRef('left');
-            this.addChild(this.#leftIcon.box);
+            const icon = this.#createIconRef('left');
+            const branch = this.addChild(icon.box);
+            if (icon.sprite) {
+                icon.sprite.anchor.set(0);
+                branch.setContent(icon.sprite);
+            } else if (icon.container) {
+                branch.contentContainer.addChild(icon.container);
+            }
+            this.#leftIcon = { ...icon, box: branch };
         }
 
         if (this.#wantsLabel) {
-            this.#labelBox = this.#createLabel();
-            this.addChild(this.#labelBox);
+            this.#labelBox = this.addChild(this.#createLabel());
         }
 
         if (this.#wantsRightIcon) {
-            this.#rightIcon = this.#createIconRef('right');
-            this.addChild(this.#rightIcon.box);
+            const icon = this.#createIconRef('right');
+            const branch = this.addChild(icon.box);
+            if (icon.sprite) {
+                icon.sprite.anchor.set(0);
+                branch.setContent(icon.sprite);
+            } else if (icon.container) {
+                branch.contentContainer.addChild(icon.container);
+            }
+            this.#rightIcon = { ...icon, box: branch };
         }
     }
 
@@ -388,7 +394,9 @@ export class ButtonStore extends BoxListStore {
         if (sig !== this.#lastLabelStyleSig) {
             this.#lastLabelStyleSig = sig;
             this.#labelBox.setTextStyle(textStyle);
-            this.#labelBox.textDisplay.alpha = alphaValue;
+            if (this.#labelBox.textDisplay) {
+                this.#labelBox.textDisplay.alpha = alphaValue;
+            }
         }
     }
 

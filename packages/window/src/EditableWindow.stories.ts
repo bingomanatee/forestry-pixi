@@ -1,7 +1,7 @@
 import type {Meta, StoryObj} from '@storybook/html';
 import {Application, Assets, Container, Graphics, Sprite, Text} from 'pixi.js';
-import {ToolbarStore} from '@wonderlandlabs-pixi-ux/toolbar';
-import {fromJSON} from '@wonderlandlabs-pixi-ux/style-tree';
+import {ToolbarStore} from '@wonderlandlabs-pixi-ux/toolbar/dist/ToolbarStore';
+import {fromJSON} from '@wonderlandlabs-pixi-ux/style-tree/dist/digest';
 import {WindowsManager, TEXTURE_STATUS} from "./WindowsManager";
 import type {RenderTitlebarFn, WindowDef} from "./types";
 import type {TitlebarStore} from "./TitlebarStore";

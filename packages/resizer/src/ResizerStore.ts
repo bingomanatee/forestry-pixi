@@ -1,4 +1,4 @@
-import {TickerForest} from '@wonderlandlabs-pixi-ux/ticker-forest';
+import {TickerForest} from '@wonderlandlabs-pixi-ux/ticker-forest/dist/TickerForest';
 import {Application, Container, FederatedPointerEvent, Graphics, Rectangle} from 'pixi.js';
 import {distinctUntilChanged} from 'rxjs';
 import {trackDrag, TrackDragResult} from './trackDrag';
