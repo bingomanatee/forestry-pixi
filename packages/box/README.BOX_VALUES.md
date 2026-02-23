@@ -110,7 +110,7 @@ Accepted input values:
 Readable constants are exported for config readability:
 
 ```ts
-import { ALIGN } from '@wonderlandlabs-pixi-ux/box/dist/constants';
+import { ALIGN } from '@wonderlandlabs-pixi-ux/box';
 
 const align = {
   x: ALIGN.RIGHT,
@@ -248,7 +248,7 @@ For config input, you can also provide ratio measurements:
 Readable size mode constants are also exported:
 
 ```ts
-import { MEASUREMENT_MODE as SIZE } from '@wonderlandlabs-pixi-ux/box/dist/constants';
+import { MEASUREMENT_MODE as SIZE } from '@wonderlandlabs-pixi-ux/box';
 
 const area = {
   width: { mode: SIZE.FRACTION, value: 2, base: 3 },

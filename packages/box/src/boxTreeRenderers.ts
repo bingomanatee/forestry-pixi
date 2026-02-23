@@ -105,7 +105,8 @@ export async function boxTreeToPixi(tree: BoxTree, options: BoxTreeToPixiOptions
       ...(nodeToStyle?.(nodeData.node, index) ?? {}),
     };
 
-    const g = new Graphics() as Graphics & BoxNodeGraphicsMetadata;
+    const g = new Graphics();
+    const gWithMeta = g as typeof g & BoxNodeGraphicsMetadata;
     g.rect(nodeData.x, nodeData.y, nodeData.width, nodeData.height);
 
     if (style.fill !== undefined) {
@@ -121,8 +122,8 @@ export async function boxTreeToPixi(tree: BoxTree, options: BoxTreeToPixiOptions
     }
 
     g.label = nodeData.node.identityPath;
-    g.boxContentType = nodeData.contentType;
-    g.boxContentValue = nodeData.contentValue;
+    gWithMeta.boxContentType = nodeData.contentType;
+    gWithMeta.boxContentValue = nodeData.contentValue;
     container.addChild(g);
   }
 

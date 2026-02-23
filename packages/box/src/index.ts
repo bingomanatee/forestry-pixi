@@ -1,7 +1,3 @@
-export { BoxStore } from './_deprecated/BoxStore';
-export { BoxLeafStore } from './_deprecated/BoxLeafStore';
-export { BoxListStore } from './_deprecated/BoxListStore';
-export { BoxTextStore, type BoxTextConfig } from './_deprecated/BoxTextStore';
 export {
     AxisSchema as TreeAxisSchema,
     DirectionSchema as TreeDirectionSchema,
@@ -83,6 +79,17 @@ export {
     type AxisConstraintLike,
 } from './types';
 export {
+    AXIS,
+    ALIGN_ENUM_KEYWORDS,
+    ALIGN_ENUM_ALIASES,
+    ALIGN,
+    MEASUREMENT_ENUM_CANONICAL,
+    MEASUREMENT_ENUM_INPUT,
+    MEASUREMENT_MODE,
+    SIZE_MODE_INPUT,
+    SIZE_MODE,
+} from './constants';
+export {
     resolveMeasurement as resolveTreeMeasurement,
     resolveMeasurementPx,
     resolveConstraintValuePx,
@@ -97,54 +104,3 @@ export {
     type BoxTreeToSvgOptions,
 } from './boxTreeRenderers';
 export { combinePaths, pathString, pathToString, type Path } from './pathUtils';
-export {
-    // Schemas
-    SizeModeSchema,
-    AlignSchema,
-    AxisDefSchema,
-    DirectionSchema,
-    GapModeSchema,
-    BaseBoxConfigSchema,
-    BoxLeafConfigSchema,
-    BoxListConfigSchema,
-    // Legacy Schemas (for backward compatibility)
-    HorizontalAlignSchema,
-    VerticalAlignSchema,
-    RectSchema,
-    PaddingSchema,
-    RgbColorSchema,
-    FillStyleSchema,
-    StrokeStyleSchema,
-    BoxStyleSchema,
-    ForestryPropsSchema,
-    // Types
-    type SizeMode,
-    type Align,
-    type AxisDef,
-    type Direction,
-    type GapMode,
-    type BaseBoxConfig,
-    type BoxLeafConfig,
-    type BoxListConfig,
-    type BoxConfig,
-    type BoxState,
-    type BoxListState,
-    // Legacy Types (for backward compatibility)
-    type HorizontalAlign,
-    type VerticalAlign,
-    type Rect,
-    type Padding,
-    type RgbColor,
-    type FillStyle,
-    type StrokeStyle,
-    type BoxStyle,
-    type BoxProps,
-    type ForestryProps,
-    type LegacyBoxConfig,
-    type ContentArea,
-    // Helpers
-    uniformPadding,
-    symmetricPadding,
-    resolveMeasurement,
-    resolveSizeValue,
-} from './_deprecated/types';

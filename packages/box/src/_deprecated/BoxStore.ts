@@ -52,7 +52,7 @@ export class BoxStore extends TickerForest<BoxState> {
         const params: StoreParams<BoxState> = BoxStore.#isStoreParams(configOrParams)
             ? configOrParams
             : { value: createBoxState(configOrParams) };
-        super(params, app);
+        super(params, { app });
 
         this.id = this.value.id;
         this._boxProps = boxProps ?? {};
@@ -297,7 +297,7 @@ export class BoxStore extends TickerForest<BoxState> {
         const child = this.$br.$add<BoxState, BoxStore>(
             ['children', childState.id],
             { subclass: BoxStore },
-            this.application,
+            this.application!,
         );
 
         this.#registerChildBranch(child);
@@ -590,7 +590,7 @@ export class BoxStore extends TickerForest<BoxState> {
             const child = existing ?? this.$br.$add<BoxState, BoxStore>(
                 ['children', childId],
                 { subclass: BoxStore },
-                this.application,
+                this.application!,
             );
 
             this.#registerChildBranch(child);
