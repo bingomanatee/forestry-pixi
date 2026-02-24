@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { BoxStyle } from './_deprecated/types';
 import { ALIGN_ENUM_ALIASES, ALIGN_ENUM_KEYWORDS, AXIS } from './constants';
 import { dictToStringArray } from './enumUtils';
 import {
@@ -8,6 +7,8 @@ import {
   type AxisConstraintLike,
   type Measurement,
 } from './types';
+
+export type BoxStyle = Record<string, unknown>;
 
 export const AxisSchema = z.enum(dictToStringArray(AXIS));
 export type Axis = z.infer<typeof AxisSchema>;

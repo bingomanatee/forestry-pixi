@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/html';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { GridManager } from './GridManager';
-import { createRootContainer } from '@wonderlandlabs-pixi-ux/root-container/dist/RootContainer';
-import { createZoomPan } from '@wonderlandlabs-pixi-ux/root-container/dist/ZoomPanContainer';
-import { makeStageZoomable } from '@wonderlandlabs-pixi-ux/root-container/dist/makeStageZoomable';
-import { makeStageDraggable } from '@wonderlandlabs-pixi-ux/root-container/dist/makeStageDraggable';
+import {
+  createRootContainer,
+  createZoomPan,
+  makeStageZoomable,
+  makeStageDraggable,
+} from '@wonderlandlabs-pixi-ux/root-container';
 
 interface GridManagerStoryArgs {
   gridX: number;
