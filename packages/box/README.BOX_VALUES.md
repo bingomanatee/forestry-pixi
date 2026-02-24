@@ -11,8 +11,6 @@ This is for the new tree/value geometry model in:
 - `/Users/davidedelhart/Documents/repos/forestry-pixi/packages/box/src/types.ts`
 - `/Users/davidedelhart/Documents/repos/forestry-pixi/packages/box/src/sizeUtils.ts`
 
-It is separate from legacy `BoxStore` `xDef/yDef` behavior.
-
 ## State Schema
 
 ```ts
