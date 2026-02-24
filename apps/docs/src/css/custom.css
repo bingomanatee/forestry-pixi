@@ -1,0 +1,23 @@
+:root {
+  --ifm-color-primary: #0f6d63;
+  --ifm-color-primary-dark: #0d6158;
+  --ifm-color-primary-darker: #0c5b53;
+  --ifm-color-primary-darkest: #0a4b44;
+  --ifm-color-primary-light: #11796e;
+  --ifm-color-primary-lighter: #128074;
+  --ifm-color-primary-lightest: #169384;
+}
+
+.homeWrap {
+  margin: 4rem auto;
+  max-width: 720px;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.homeActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}

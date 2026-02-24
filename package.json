@@ -10,6 +10,9 @@
  "scripts": {
   "storybook": "storybook dev -p 6006",
   "build-storybook": "storybook build",
+  "docs:dev": "yarn workspace @wonderlandlabs-pixi-ux/docs dev",
+  "docs:start": "yarn workspace @wonderlandlabs-pixi-ux/docs start",
+  "docs:build": "yarn workspace @wonderlandlabs-pixi-ux/docs build",
   "build": "yarn workspaces foreach -A run build",
   "clean": "yarn workspaces foreach -A run clean",
   "test": "vitest",
