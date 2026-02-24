@@ -5,7 +5,6 @@ Tree-first box layout model built on Forestry branches.
 ## Status
 
 - Public API is `BoxTree` + BoxTree measurement/alignment utilities.
-- Legacy Pixi-centric `BoxStore` classes remain in `src/_deprecated` for transitional internal usage only.
 
 ## Installation
 
