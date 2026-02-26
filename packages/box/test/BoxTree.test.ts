@@ -93,6 +93,25 @@ describe('BoxTree', () => {
       expect(urlState.content).toEqual({ type: 'url', value: 'https://example.com/image.png' });
     });
 
+    it('accepts extensible content payload fields', () => {
+      const imageState = createBoxTreeState({
+        id: 'image-node',
+        area: { x: 0, y: 0 },
+        content: {
+          type: 'image',
+          value: 'https://example.com/image.png',
+          fit: 'cover',
+          styleOverride: { tint: 0xff0000 },
+        },
+      });
+
+      expect(imageState.content).toEqual(expect.objectContaining({
+        type: 'image',
+        value: 'https://example.com/image.png',
+        fit: 'cover',
+      }));
+    });
+
     it('rejects invalid content type', () => {
       expect(() => createBoxTreeState({
         id: 'bad-content',
@@ -626,6 +645,20 @@ describe('BoxTree', () => {
 
       expect(calls).toEqual(['root']);
       expect(root.isRenderQueued).toBe(false);
+
+      calls.length = 0;
+      root.setContent({
+        type: 'image',
+        value: 'https://example.com/updated.png',
+        fit: 'contain',
+      });
+
+      expect(root.isRenderQueued).toBe(true);
+      expect(queued.length).toBe(1);
+      const contentTick = queued.shift();
+      contentTick?.fn.call(contentTick.ctx);
+      expect(calls).toEqual(['root']);
+      expect(root.isRenderQueued).toBe(false);
     });
 
     it('supports manual flush when no ticker is available', () => {
@@ -778,6 +811,17 @@ describe('BoxTree', () => {
 
       root.setContent({ type: 'url', value: 'https://example.com/caption.svg' });
       expect(root.content).toEqual({ type: 'url', value: 'https://example.com/caption.svg' });
+
+      root.setContent({
+        type: 'image',
+        value: 'https://example.com/caption.png',
+        fit: 'contain',
+      });
+      expect(root.content).toEqual(expect.objectContaining({
+        type: 'image',
+        value: 'https://example.com/caption.png',
+        fit: 'contain',
+      }));
 
       root.clearContent();
       expect(root.content).toBeUndefined();

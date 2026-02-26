@@ -1,29 +1,45 @@
 import './pixiEnvironment';
 import type { Application } from 'pixi.js';
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import type { BoxRenderer, BoxTree } from './BoxTree';
-import { BOX_UX_CONTENT_ORDER, BoxUxContextMap, BoxUxPixiContentMap } from './BoxUxContextMap';
+import { BoxUxBase } from './BoxUxBase';
+import { MapEnhanced } from './BoxUxContextMap';
+import {
+  BOX_RENDER_CONTENT_ORDER,
+  BOX_UX_CONTENT_ORDER,
+  BOX_UX_LAYER,
+  BOX_UX_ORDER,
+  getUxOrder,
+  setUxOrder,
+} from './constants';
 import {
   BACKGROUND_CONTAINER,
   BOX_UX_ENV,
   CHILD_CONTAINER,
+  CONTENT_CONTAINER,
   OVERLAY_CONTAINER,
   ROOT_CONTAINER,
   STROKE_CONTAINER,
 } from './constants.ux';
 import { asColorNumber, asNonNegativeNumber, resolveStyleProp } from './utils.ux';
 import type {
-  BoxTreeFillStyle,
-  BoxTreeStrokeStyle,
   BoxTreeStyleMap,
   BoxTreeUxStyleManagerLike,
 } from './types.ux';
 
-export { BOX_UX_CONTENT_ORDER, BOX_RENDER_CONTENT_ORDER } from './BoxUxContextMap';
+export {
+  BOX_UX_CONTENT_ORDER,
+  BOX_UX_ORDER,
+  BOX_UX_LAYER,
+  BOX_RENDER_CONTENT_ORDER,
+  getUxOrder,
+  setUxOrder,
+} from './constants';
 export {
   BACKGROUND_CONTAINER,
   BOX_UX_ENV,
   CHILD_CONTAINER,
+  CONTENT_CONTAINER,
   OVERLAY_CONTAINER,
   ROOT_CONTAINER,
   STROKE_CONTAINER,
@@ -34,12 +50,13 @@ export type {
   BoxTreeStyleMap,
   BoxTreeUxStyleManagerLike,
 } from './types.ux';
+export { BoxUxBase } from './BoxUxBase';
 
-function isBoxTreeUx(value: unknown): value is BoxTreeUx {
+function isBoxUxPixi(value: unknown): value is BoxUxPixi {
   if (!value || typeof value !== 'object') {
     return false;
   }
-  const candidate = value as Partial<BoxTreeUx>;
+  const candidate = value as Partial<BoxUxPixi>;
   return candidate.container instanceof Container
     && typeof candidate.env === 'string';
 }
@@ -47,36 +64,49 @@ function isBoxTreeUx(value: unknown): value is BoxTreeUx {
 /**
  * Default BoxTree UX implementation for Pixi containers.
  *
- * Exposes `content` as an ordered layer map:
- * - 0: BACKGROUND
- * - 50: CHILDREN
- * - 100: OVERLAY
+ * Exposes `content` as a keyed layer map. Layer order is taken from each
+ * display object's `zIndex` during render.
  */
-export class BoxTreeUx implements BoxRenderer {
+export class BoxUxPixi extends BoxUxBase implements BoxRenderer {
   static readonly DEFAULT_STYLES: BoxTreeUxStyleManagerLike = {
     match: () => undefined,
   };
 
   readonly env = BOX_UX_ENV.PIXI;
-  readonly box: BoxTree;
   readonly container: Container;
-  readonly contentMap: BoxUxContextMap;
-
-  isInitialized = false;
+  readonly contentMap: MapEnhanced;
+  #managedContentNode?: Sprite | Text;
+  #managedContentKey?: string;
+  #strokeGraphic?: Graphics;
 
   constructor(box: BoxTree) {
-    this.box = box;
+    super(box);
 
     this.container = new Container({
       label: `${this.box.identityPath}-container`,
       sortableChildren: true,
     });
 
-    this.contentMap = new BoxUxPixiContentMap(this.box);
+    this.contentMap = new MapEnhanced();
+  }
+
+  #requireGraphicsLayer(layer: string, label: string): Graphics {
+    return this.contentMap.getOrMake(layer, () => {
+      const graphic = new Graphics();
+      graphic.label = label;
+      return graphic;
+    });
+  }
+
+  #requireContainerLayer(layer: string, label: string): Container {
+    return this.contentMap.getOrMake(
+      layer,
+      () => new Container({ label }),
+    );
   }
 
   get styles(): BoxTreeUxStyleManagerLike {
-    return this.box.styles ?? BoxTreeUx.DEFAULT_STYLES;
+    return this.box.styles ?? BoxUxPixi.DEFAULT_STYLES;
   }
 
   get app(): Application | undefined {
@@ -84,32 +114,71 @@ export class BoxTreeUx implements BoxRenderer {
   }
 
   get background(): Graphics {
-    return this.contentMap.$background();
+    const background = this.#requireGraphicsLayer(
+      BOX_UX_LAYER.BACKGROUND,
+      `${this.box.identityPath}-background`,
+    );
+    background.eventMode = 'none';
+    background.zIndex = BOX_RENDER_CONTENT_ORDER.BACKGROUND;
+    return background;
   }
 
   get childContainer(): Container {
-    return this.contentMap.$children();
+    const childContainer = this.#requireContainerLayer(
+      BOX_UX_LAYER.CHILDREN,
+      `${this.box.identityPath}-children`,
+    );
+    childContainer.zIndex = BOX_RENDER_CONTENT_ORDER.CHILDREN;
+    childContainer.sortableChildren = true;
+    return childContainer;
   }
 
   get overlayContainer(): Container {
-    return this.contentMap.$overlay();
+    const overlay = this.#requireContainerLayer(
+      BOX_UX_LAYER.OVERLAY,
+      `${this.box.identityPath}-overlay`,
+    );
+    overlay.zIndex = BOX_RENDER_CONTENT_ORDER.OVERLAY;
+    overlay.sortableChildren = true;
+    overlay.eventMode = 'none';
+    return overlay;
+  }
+
+  get contentContainer(): Container {
+    const contentContainer = this.#requireContainerLayer(
+      BOX_UX_LAYER.CONTENT,
+      `${this.box.identityPath}-content`,
+    );
+    contentContainer.zIndex = BOX_RENDER_CONTENT_ORDER.CONTENT;
+    contentContainer.sortableChildren = true;
+    return contentContainer;
   }
 
   get strokeGraphic(): Graphics {
-    return this.contentMap.$stroke();
+    const overlay = this.overlayContainer;
+    if (!this.#strokeGraphic || this.#strokeGraphic.destroyed) {
+      const next = new Graphics();
+      next.label = `${this.box.identityPath}-stroke`;
+      next.eventMode = 'none';
+      this.#strokeGraphic = next;
+    }
+    if (this.#strokeGraphic.parent !== overlay) {
+      overlay.addChild(this.#strokeGraphic);
+    }
+    return this.#strokeGraphic;
   }
 
   // Back-compat alias for older call sites.
-  get content(): BoxUxContextMap {
+  get content(): MapEnhanced {
     return this.contentMap;
   }
 
-  get childUxs(): ReadonlyMap<string, BoxTreeUx> {
-    return this.#getChildUxs();
+  get childUxs(): ReadonlyMap<string, BoxUxPixi> {
+    return this.getChildRenderers(isBoxUxPixi);
   }
 
-  get childRenderers(): ReadonlyMap<string, BoxTreeUx> {
-    return this.#getChildUxs();
+  get childRenderers(): ReadonlyMap<string, BoxUxPixi> {
+    return this.getChildRenderers(isBoxUxPixi);
   }
 
   generateStyleMap(targetBox: BoxTree): BoxTreeStyleMap {
@@ -148,19 +217,11 @@ export class BoxTreeUx implements BoxRenderer {
     };
   }
 
-  #readChildUx(child: BoxTree): BoxTreeUx | undefined {
-    if (isBoxTreeUx(child.ux)) {
-      return child.ux;
-    }
-    return isBoxTreeUx(child.renderer) ? child.renderer : undefined;
+  getChildUx(key: string): BoxUxPixi | undefined {
+    return this.getChildRendererByKey(key, isBoxUxPixi);
   }
 
-  getChildUx(key: string): BoxTreeUx | undefined {
-    const child = this.box.getChild(key);
-    return child ? this.#readChildUx(child) : undefined;
-  }
-
-  getChildRenderer(key: string): BoxTreeUx | undefined {
+  getChildRenderer(key: string): BoxUxPixi | undefined {
     return this.getChildUx(key);
   }
 
@@ -173,6 +234,9 @@ export class BoxTreeUx implements BoxRenderer {
     }
     if (key === CHILD_CONTAINER) {
       return this.childContainer;
+    }
+    if (key === CONTENT_CONTAINER) {
+      return this.contentContainer;
     }
     if (key === OVERLAY_CONTAINER) {
       return this.overlayContainer;
@@ -192,17 +256,6 @@ export class BoxTreeUx implements BoxRenderer {
     return this.container;
   }
 
-  #getChildUxs(): ReadonlyMap<string, BoxTreeUx> {
-    const out = new Map<string, BoxTreeUx>();
-    for (const child of this.box.children) {
-      const childUx = this.#readChildUx(child);
-      if (childUx) {
-        out.set(child.name, childUx);
-      }
-    }
-    return out;
-  }
-
   #syncChildren(childrenMap: ReadonlyMap<string, BoxTree>): void {
     const childContainer = this.childContainer;
 
@@ -210,16 +263,128 @@ export class BoxTreeUx implements BoxRenderer {
     childContainer.removeChildren();
     for (const child of childrenMap.values()) {
       child.render();
-      const childUx = this.#readChildUx(child);
-      if (childUx) {
+      const childUx = this.readChildRenderer(child, isBoxUxPixi);
+      if (childUx?.isAttached) {
         childContainer.addChild(childUx.container);
+      }
+    }
+  }
+
+  #isRenderableContent(content: unknown): content is Container | Graphics {
+    return content instanceof Container || content instanceof Graphics;
+  }
+
+  #isContentEmpty(content: unknown): boolean {
+    if (!this.#isRenderableContent(content)) {
+      return true;
+    }
+    if (!content.visible) {
+      return true;
+    }
+    if (content instanceof Graphics) {
+      return false;
+    }
+    return !content.children.some((child) => child.visible);
+  }
+
+  #renderContentMap(parent: Container): void {
+    const ordered = [...this.contentMap.entries()]
+      .filter((entry): entry is [string, Container | Graphics] => this.#isRenderableContent(entry[1]))
+      .sort((a, b) => {
+      const left = Number.isFinite(a[1].zIndex) ? a[1].zIndex : 0;
+      const right = Number.isFinite(b[1].zIndex) ? b[1].zIndex : 0;
+      if (left !== right) {
+        return left - right;
+      }
+      return a[0].localeCompare(b[0]);
+      });
+
+    for (const [, content] of ordered) {
+      if (this.#isContentEmpty(content)) {
+        if (content.parent === parent) {
+          parent.removeChild(content);
+        }
+        continue;
+      }
+      if (content.parent !== parent) {
+        parent.addChild(content);
+      }
+    }
+  }
+
+  #clearManagedContent(): void {
+    if (!this.#managedContentNode) {
+      return;
+    }
+    if (this.#managedContentNode.parent) {
+      this.#managedContentNode.parent.removeChild(this.#managedContentNode);
+    }
+    this.#managedContentNode.destroy();
+    this.#managedContentNode = undefined;
+    this.#managedContentKey = undefined;
+  }
+
+  #syncNodeContent(): void {
+    const contentContainer = this.contentContainer;
+    const contentDef = this.box.content;
+    if (!contentDef) {
+      this.#clearManagedContent();
+      return;
+    }
+
+    if (contentDef.type === 'text') {
+      const textKey = `text:${contentDef.value}:${Math.max(0, this.box.width)}`;
+      if (!(this.#managedContentNode instanceof Text) || this.#managedContentKey !== textKey) {
+        this.#clearManagedContent();
+        const text = new Text({
+          text: contentDef.value,
+          style: new TextStyle({
+            fontSize: 13,
+            fill: 0xffffff,
+            align: 'left',
+            fontFamily: 'Arial',
+            wordWrap: true,
+            wordWrapWidth: Math.max(0, this.box.width),
+          }),
+        });
+        text.label = `${this.box.identityPath}-content-text`;
+        text.x = 0;
+        text.y = 0;
+        this.#managedContentNode = text;
+        this.#managedContentKey = textKey;
+      }
+      if (this.#managedContentNode.parent !== contentContainer) {
+        contentContainer.addChild(this.#managedContentNode);
+      }
+      return;
+    }
+
+    const imageKey = `image:${contentDef.value}`;
+    if (!(this.#managedContentNode instanceof Sprite) || this.#managedContentKey !== imageKey) {
+      try {
+        this.#clearManagedContent();
+        const sprite = Sprite.from(contentDef.value);
+        sprite.label = `${this.box.identityPath}-content-image`;
+        sprite.x = 0;
+        sprite.y = 0;
+        this.#managedContentNode = sprite;
+        this.#managedContentKey = imageKey;
+      } catch {
+        this.#clearManagedContent();
+        return;
+      }
+    }
+    if (this.#managedContentNode instanceof Sprite) {
+      this.#managedContentNode.width = Math.max(0, this.box.width);
+      this.#managedContentNode.height = Math.max(0, this.box.height);
+      if (this.#managedContentNode.parent !== contentContainer) {
+        contentContainer.addChild(this.#managedContentNode);
       }
     }
   }
 
   #renderBackground(): void {
     const background = this.background;
-    const overlay = this.overlayContainer;
     const strokeGraphic = this.strokeGraphic;
 
     const styleMap = this.generateStyleMap(this.box);
@@ -238,7 +403,6 @@ export class BoxTreeUx implements BoxRenderer {
 
     background.visible = hasFill;
     strokeGraphic.visible = hasStroke;
-    overlay.visible = hasStroke;
 
     if (hasFill) {
       background.rect(0, 0, width, height);
@@ -256,12 +420,18 @@ export class BoxTreeUx implements BoxRenderer {
   }
 
   #destroyContent(): void {
-    const childLayer = this.contentMap.get(BOX_UX_CONTENT_ORDER.CHILDREN);
+    this.#clearManagedContent();
+    this.#strokeGraphic = undefined;
+
+    const childLayer = this.contentMap.get(BOX_UX_LAYER.CHILDREN);
     if (childLayer instanceof Container) {
       childLayer.removeChildren();
     }
 
     for (const layerContent of this.contentMap.values()) {
+      if (!this.#isRenderableContent(layerContent)) {
+        continue;
+      }
       if (layerContent.parent === this.container) {
         this.container.removeChild(layerContent);
       }
@@ -270,55 +440,38 @@ export class BoxTreeUx implements BoxRenderer {
     this.contentMap.clear();
   }
 
-  init(): void {
-    if (this.isInitialized) {
-      return;
-    }
-    this.isInitialized = true;
-  }
-
-  private renderUp(): void {
-    if (!this.isInitialized) {
-      this.init();
-    }
-
+  protected override renderUp(): void {
     this.container.position.set(this.box.x, this.box.y);
     this.container.zIndex = this.box.order;
     this.container.sortableChildren = true;
 
-    this.container.visible = true;
-
     const childrenMap = this.box.getChildBoxes();
-    this.contentMap.$ensureDefaults();
+    void this.background;
+    void this.childContainer;
+    void this.contentContainer;
+    void this.overlayContainer;
     this.#syncChildren(childrenMap);
+    this.#syncNodeContent();
     this.#renderBackground();
-    this.contentMap.$render(this.container);
+    this.#renderContentMap(this.container);
   }
 
-  private renderDown(): void {
+  protected override onAttach(): void {
+    this.container.visible = true;
+  }
+
+  protected override onDetach(): void {
     this.container.visible = false;
-    if (!this.isInitialized) {
-      return;
-    }
-    this.#destroyContent();
-    this.isInitialized = false;
   }
 
-  render(): void {
-    if (this.box.value.isVisible) {
-      this.renderUp();
-      return;
-    }
-    this.renderDown();
-  }
-
-  clear(): void {
+  protected override onDestroy(): void {
     this.#destroyContent();
-    this.isInitialized = false;
   }
 }
 
-export const BoxTreeRenderer = BoxTreeUx;
-export type BoxTreeRenderer = BoxTreeUx;
+export const BoxTreeUx = BoxUxPixi;
+export type BoxTreeUx = BoxUxPixi;
+export const BoxTreeRenderer = BoxUxPixi;
+export type BoxTreeRenderer = BoxUxPixi;
 export type BoxTreeStyleManagerLike = BoxTreeUxStyleManagerLike;
-export const BoxUx = BoxTreeUx;
+export const BoxUx = BoxUxPixi;

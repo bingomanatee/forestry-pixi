@@ -77,10 +77,10 @@ layout.toggleGlobalVerb('disabled');
 `BoxTree` defaults to the built-in Pixi UX map. Override with `assignUx(ux, applyToChildren?)`:
 
 ```ts
-import { BoxTreeUx } from '@wonderlandlabs-pixi-ux/box';
+import { BoxUxPixi } from '@wonderlandlabs-pixi-ux/box';
 
 layout.styles = styles;
-layout.assignUx((box) => new BoxTreeUx(box));
+layout.assignUx((box) => new BoxUxPixi(box));
 layout.render(); // calls ux.init() once, then ux.render()
 ```
 
@@ -92,7 +92,7 @@ Constructor shortcut:
 const layout = new BoxTree({
   id: 'root',
   area: { x: 0, y: 0, width: 200, height: 100 },
-  ux: (box) => new BoxTreeUx(box),
+  ux: (box) => new BoxUxPixi(box),
 });
 layout.styles = styles;
 ```
@@ -139,23 +139,27 @@ const fillStyle = icon?.resolveStyle(styles, ['pressed']);
 
 ## Default Ux
 
-`box` ships with `BoxTreeUx`, a default Pixi UX implementation for `BoxTree`.
+`box` ships with `BoxUxPixi`, a default Pixi UX implementation for `BoxTree`.
 
 Behavior:
 
 - Creates a container when `container` is not provided
-- Uses public `content: BoxUxContextMap` (a `Map<number, Container | Graphics>` subclass)
+- Uses public `content: MapEnhanced` (a `Map<string, unknown>` subclass)
 - `content.$box` points at the owning `BoxTree`
-- `content.$render(parentContainer)` handles ordered layer injection
 - Exposes `ux.getContainer(key): unknown` for renderer-to-renderer handoff:
-  - `ROOT_CONTAINER`, `BACKGROUND_CONTAINER`, `CHILD_CONTAINER`, `OVERLAY_CONTAINER`, `STROKE_CONTAINER`
+  - `ROOT_CONTAINER`, `BACKGROUND_CONTAINER`, `CHILD_CONTAINER`, `CONTENT_CONTAINER`, `OVERLAY_CONTAINER`, `STROKE_CONTAINER`
 - Exposes `ux.attach(targetContainer?)`:
   - attaches root container to `targetContainer`
   - if omitted, uses `ux.app?.stage`
 - Pre-populates built-in layers if absent:
   - `BOX_RENDER_CONTENT_ORDER.BACKGROUND = 0`
   - `BOX_RENDER_CONTENT_ORDER.CHILDREN = 50`
+  - `BOX_RENDER_CONTENT_ORDER.CONTENT = 75`
   - `BOX_RENDER_CONTENT_ORDER.OVERLAY = 100`
+- Supports named layer order lookups:
+  - `BOX_UX_ORDER` (`ReadonlyMap<string, number>`)
+  - `setUxOrder(name, zIndex)` with duplicate z-index protection
+  - `getUxOrder(name)` for safe lookup
 - Rebuilds children layer each render by clearing and re-adding child UX containers
 - Draws a background graphic from style props:
   - `[stylePath].bgColor`
@@ -166,20 +170,17 @@ Behavior:
 - Exposes `ux.generateStyleMap(box)` with normalized shape:
   - `fill: { color, alpha }`
   - `stroke: { color, alpha, width }`
-- Starts a `distinctUntilChanged` watcher on box updates:
-  - compares computed `x`, `y`, `width`, `height`, and style map
-  - when changed, sets `ux.isDirty = true` and queues a render
 - Honors `box.isVisible`:
-  - when `false`, hides the container and destroys/clears render content layers
-  - when `true` again, layers are recreated on next render
-- Iterates `content` by key and injects non-empty items into root container
+  - when `false`, detaches (hides) the container without destroying render content
+  - when `true` again, existing layers are reused on next render
+- Iterates `content` and injects non-empty items into root container sorted by each item's `zIndex`
 
 ```ts
 import { Graphics } from 'pixi.js';
 import {
   BOX_RENDER_CONTENT_ORDER,
   BoxTree,
-  BoxTreeUx,
+  BoxUxPixi,
 } from '@wonderlandlabs-pixi-ux/box';
 import { fromJSON } from '@wonderlandlabs-pixi-ux/style-tree';
 
@@ -211,21 +212,29 @@ const root = new BoxTree({
 });
 
 root.styles = styles;
-const ux = new BoxTreeUx(root);
+const ux = new BoxUxPixi(root);
 root.render();
 // manual mount
 ux.attach(app.stage);
 
 // custom content layer example:
-ux.content.set(75, new Graphics());
-ux.content.get(BOX_RENDER_CONTENT_ORDER.OVERLAY)?.visible = true;
+const custom = new Graphics();
+custom.zIndex = 76;
+custom.visible = true;
+ux.content.set('CUSTOM', custom);
+ux.content.get('OVERLAY')?.visible = true;
 const ownerBox = ux.content.$box;
 ```
 
 ## Override Points
 
-`BoxTreeUx` is a UX base class. For custom behavior, return your own UX instance from
-`assignUx((box) => ...)`, or wrap the default UX and add layers through `ux.content`.
+`BoxUxBase` is the renderer-agnostic lifecycle base (`init`, `render`, `clear`, visible up/down flow).
+`BoxUxPixi` extends `BoxUxBase` and provides the Pixi-specific containers/graphics behavior.
+
+For custom behavior, return your own UX instance from `assignUx((box) => ...)`, either:
+
+- extending `BoxUxBase` for a new renderer, or
+- extending `BoxUxPixi` for Pixi-specific customization.
 
 Detailed style/composition docs:
 
@@ -255,10 +264,11 @@ const graphics = await boxTreeToPixi(layout, {
 - `BoxUxMapFn`
 - `BoxRenderer` (legacy alias of `BoxUx`)
 - `BoxRenderMapFn` (legacy alias of `BoxUxMapFn`)
-- `BoxUxContextMap`
-- `BoxRenderContentMap` (legacy alias of `BoxUxContextMap`)
-- `BoxTreeUx`
-- `BoxTreeRenderer` (legacy alias of `BoxTreeUx`)
+- `MapEnhanced`
+- `BoxUxBase`
+- `BoxUxPixi`
+- `BoxTreeRenderer` (legacy alias of `BoxUxPixi`)
+- `BOX_UX_ORDER`, `getUxOrder`, `setUxOrder`
 - `BOX_RENDER_CONTENT_ORDER`
 - `createBoxTreeState`
 - `resolveTreeMeasurement`

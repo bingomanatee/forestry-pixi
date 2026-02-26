@@ -16,13 +16,13 @@ export type Axis = z.infer<typeof AxisSchema>;
 export const DirectionSchema = z.enum(['row', 'column']);
 export type Direction = z.infer<typeof DirectionSchema>;
 
-export const BoxContentTypeSchema = z.enum(['text', 'url']);
+export const BoxContentTypeSchema = z.enum(['text', 'url', 'image']);
 export type BoxContentType = z.infer<typeof BoxContentTypeSchema>;
 
 export const BoxContentSchema = z.object({
   type: BoxContentTypeSchema,
   value: z.string(),
-});
+}).passthrough();
 export type BoxContent = z.infer<typeof BoxContentSchema>;
 
 export const StyleNameSchema = z.string().min(1);

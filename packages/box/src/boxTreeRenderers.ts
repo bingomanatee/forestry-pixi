@@ -1,7 +1,7 @@
 import type { BoxTree } from './BoxTree';
 import type { Container } from 'pixi.js';
 
-type BoxNodeContentType = 'text' | 'url';
+type BoxNodeContentType = 'text' | 'url' | 'image';
 
 type BoxNodeGraphicsMetadata = {
   boxContentType?: BoxNodeContentType;

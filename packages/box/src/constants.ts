@@ -17,6 +17,10 @@ const SIZE_MODE_PERCENT = 'percent';
 const SIZE_MODE_PERCENT_FREE = 'percentFree';
 const SIZE_MODE_FILL = 'fill';
 const SIZE_MODE_HUG = 'hug';
+const BOX_UX_LAYER_BACKGROUND = 'BACKGROUND';
+const BOX_UX_LAYER_CHILDREN = 'CHILDREN';
+const BOX_UX_LAYER_CONTENT = 'CONTENT';
+const BOX_UX_LAYER_OVERLAY = 'OVERLAY';
 
 export const AXIS = Object.freeze({
   X: AXIS_X,
@@ -85,3 +89,64 @@ export const SIZE_MODE = Object.freeze({
   PERCENT_FREE: SIZE_MODE_PERCENT_FREE,
   HUG: SIZE_MODE_HUG,
 } as const);
+
+export const BOX_UX_LAYER = Object.freeze({
+  BACKGROUND: BOX_UX_LAYER_BACKGROUND,
+  CHILDREN: BOX_UX_LAYER_CHILDREN,
+  CONTENT: BOX_UX_LAYER_CONTENT,
+  OVERLAY: BOX_UX_LAYER_OVERLAY,
+} as const);
+
+const BOX_UX_ORDER_MUTABLE = new Map<string, number>([
+  [BOX_UX_LAYER.BACKGROUND, 0],
+  [BOX_UX_LAYER.CHILDREN, 50],
+  [BOX_UX_LAYER.CONTENT, 75],
+  [BOX_UX_LAYER.OVERLAY, 100],
+]);
+
+export const BOX_UX_ORDER: ReadonlyMap<string, number> = BOX_UX_ORDER_MUTABLE;
+
+export function getUxOrder(name: string): number {
+  const order = BOX_UX_ORDER_MUTABLE.get(name);
+  if (order === undefined) {
+    throw new Error(`Unknown UX layer "${name}"`);
+  }
+  return order;
+}
+
+export function setUxOrder(name: string, order: number): void {
+  const nextName = name.trim();
+  if (!nextName.length) {
+    throw new Error('Layer name must be non-empty');
+  }
+  if (!Number.isFinite(order)) {
+    throw new Error(`Layer "${nextName}" order must be finite`);
+  }
+
+  for (const [layerName, zIndex] of BOX_UX_ORDER_MUTABLE.entries()) {
+    if (layerName !== nextName && zIndex === order) {
+      throw new Error(
+        `Cannot set "${nextName}" to z-index ${order}; already used by "${layerName}"`,
+      );
+    }
+  }
+
+  BOX_UX_ORDER_MUTABLE.set(nextName, order);
+}
+
+export const BOX_UX_CONTENT_ORDER = {
+  get BACKGROUND() {
+    return getUxOrder(BOX_UX_LAYER.BACKGROUND);
+  },
+  get CHILDREN() {
+    return getUxOrder(BOX_UX_LAYER.CHILDREN);
+  },
+  get CONTENT() {
+    return getUxOrder(BOX_UX_LAYER.CONTENT);
+  },
+  get OVERLAY() {
+    return getUxOrder(BOX_UX_LAYER.OVERLAY);
+  },
+} as const;
+
+export const BOX_RENDER_CONTENT_ORDER = BOX_UX_CONTENT_ORDER;

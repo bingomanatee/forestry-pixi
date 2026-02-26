@@ -64,13 +64,13 @@ export {
     type BoxTreeRuntimeConfig,
 } from './BoxTree';
 export {
-    BoxUxContextMap,
-    BoxUxPixiContentMap,
-    BoxRenderContentMap,
-    BOX_UX_CONTENT_ORDER,
-    BOX_RENDER_CONTENT_ORDER,
+    MapEnhanced,
 } from './BoxUxContextMap';
 export {
+    BoxUxBase,
+} from './BoxUxBase';
+export {
+    BoxUxPixi,
     BoxTreeUx,
     BoxTreeRenderer,
     type BoxTreeStyleManagerLike,
@@ -79,6 +79,7 @@ export {
     ROOT_CONTAINER,
     BACKGROUND_CONTAINER,
     CHILD_CONTAINER,
+    CONTENT_CONTAINER,
     OVERLAY_CONTAINER,
     STROKE_CONTAINER,
     BOX_UX_ENV,
@@ -123,6 +124,12 @@ export {
     ALIGN_ENUM_KEYWORDS,
     ALIGN_ENUM_ALIASES,
     ALIGN,
+    BOX_UX_LAYER,
+    BOX_UX_ORDER,
+    getUxOrder,
+    setUxOrder,
+    BOX_UX_CONTENT_ORDER,
+    BOX_RENDER_CONTENT_ORDER,
     MEASUREMENT_ENUM_CANONICAL,
     MEASUREMENT_ENUM_INPUT,
     MEASUREMENT_MODE,

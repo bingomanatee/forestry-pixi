@@ -1,11 +1,11 @@
 # Box Styles and Composition
 
-This page documents how the default `BoxTreeUx` composes render layers and which style keys it reads.
+This page documents how the default `BoxUxPixi` composes render layers and which style keys it reads.
 
 Typical flow:
 
 1. `root.styles = styles`
-2. `root.assignUx((box) => new BoxTreeUx(box))`
+2. `root.assignUx((box) => new BoxUxPixi(box))`
 3. `root.render()`
 
 ## Style Path Resolution
@@ -45,35 +45,36 @@ From resolved paths, this means keys like:
 
 ## Composition Model
 
-`BoxTreeUx` exposes:
+`BoxUxPixi` exposes:
 
-- `content: BoxUxContextMap` (`Map<number, Container | Graphics>` subclass)
+- `content: MapEnhanced` (`Map<string, unknown>` subclass)
 - `content.$box` for the owner node
-- `content.$render(parentContainer)` for ordered layer injection
 - `getContainer(key): unknown` with keys:
-  - `ROOT_CONTAINER`, `BACKGROUND_CONTAINER`, `CHILD_CONTAINER`, `OVERLAY_CONTAINER`, `STROKE_CONTAINER`
+  - `ROOT_CONTAINER`, `BACKGROUND_CONTAINER`, `CHILD_CONTAINER`, `CONTENT_CONTAINER`, `OVERLAY_CONTAINER`, `STROKE_CONTAINER`
 - `attach(targetContainer?)` to mount root container to a parent (or `ux.app?.stage`)
 - `generateStyleMap(box)` -> `{ fill: { color, alpha }, stroke: { color, alpha, width } }`
-- `isDirty`, `markDirty()`, `queueRender()`
 
 Default reserved layer keys:
 
 - `BOX_RENDER_CONTENT_ORDER.BACKGROUND = 0`
 - `BOX_RENDER_CONTENT_ORDER.CHILDREN = 50`
+- `BOX_RENDER_CONTENT_ORDER.CONTENT = 75`
 - `BOX_RENDER_CONTENT_ORDER.OVERLAY = 100`
+- `BOX_UX_ORDER` map + `setUxOrder(name, zIndex)` + `getUxOrder(name)` for named custom layers
 
 On every `render()`:
 
 1. Default layers are pre-populated if missing
 2. Child UX instances are updated
 3. Child container is cleared and rebuilt from current child UX containers
-4. Background/stroke are redrawn from styles
-5. `content` is iterated by ascending key and non-empty items are attached to the root container
+4. Optional `box.content` is rendered into the `CONTENT` layer (`text` and image URL content)
+5. Background/stroke are redrawn from styles
+6. `content` is sorted by `zIndex` and non-empty items are attached to the root container
 
-UX also starts a `distinctUntilChanged` subscription against the owning box:
+Render queueing is owned by `BoxTree` (store-level watcher), not by `BoxUxPixi`.
 
-- compares computed `x`, `y`, `width`, `height`, and `generateStyleMap(box)`
-- when changed, sets dirty once and queues render
+`BoxUxPixi` extends `BoxUxBase`; custom renderers can usually start from `BoxUxBase`
+to reuse lifecycle patterns (`init`/`render`/`clear` and visible up/down flow).
 
 ## Built-in Layers
 
@@ -83,6 +84,9 @@ UX also starts a `distinctUntilChanged` subscription against the owning box:
 - `CHILDREN`:
   - `Container`
   - receives child renderer containers each frame
+- `CONTENT`:
+  - `Container`
+  - receives optional `box.content` rendering (`text` and image URL content)
 - `OVERLAY`:
   - `Container`
   - contains stroke `Graphics` drawing from `bgStrokeColor` + `bgStrokeSize`
@@ -93,14 +97,15 @@ You can inject custom layers by setting additional `content` entries:
 
 ```ts
 import { Graphics } from 'pixi.js';
-import { BoxTreeUx } from '@wonderlandlabs-pixi-ux/box';
+import { BoxUxPixi } from '@wonderlandlabs-pixi-ux/box';
 
 box.styles = styles;
-const ux = new BoxTreeUx(box);
+const ux = new BoxUxPixi(box);
 const custom = new Graphics();
 custom.visible = true;
 
-ux.content.set(75, custom); // between CHILDREN (50) and OVERLAY (100)
+custom.zIndex = 76; // 75 is reserved for CONTENT
+ux.content.set('CUSTOM', custom);
 ux.box.render();
 ```
 

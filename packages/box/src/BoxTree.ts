@@ -5,7 +5,7 @@ import { distinctUntilChanged, map, skip, type Subscription } from 'rxjs';
 import { AxisConstraintSchema, PxValueSchema, type PxValue } from './types';
 import { applyAxisConstraints, resolveConstraintValuePx, resolveMeasurement } from './sizeUtils';
 import { pathToString } from './pathUtils';
-import { BoxTreeUx } from './BoxUx';
+import { BoxUxPixi } from './BoxUx';
 import type { BoxTreeUxStyleManagerLike } from './types.ux';
 import {
   AlignInputSchema,
@@ -46,7 +46,11 @@ type StyleManagerLike = {
 export type BoxUx = {
   readonly env: string;
   isInitialized: boolean;
+  isAttached?: boolean;
   init: () => void;
+  attach?: () => void;
+  detach?: () => void;
+  destroy?: () => void;
   render: () => void;
   clear: () => void;
   getContainer: (key: unknown) => unknown;
@@ -63,7 +67,7 @@ export type BoxTreeRuntimeConfig = BoxTreeConfig & {
 
 export type BoxRenderMapFn = BoxUxMapFn;
 export type BoxRenderer = BoxUx;
-const DEFAULT_BOX_UX_MAP_FN: BoxUxMapFn = (box) => new BoxTreeUx(box);
+const DEFAULT_BOX_UX_MAP_FN: BoxUxMapFn = (box) => new BoxUxPixi(box);
 
 function zodMessage(error: unknown): string {
   if (error instanceof z.ZodError) {
@@ -468,11 +472,15 @@ export class BoxTree extends Forest<BoxTreeState> {
         valueRef: this.value,
         nounsKey: this.styleNouns.join('.'),
         verbsKey: this.resolvedVerb.join('|'),
+        contentType: this.content?.type,
+        contentValue: this.content?.value,
       })),
       distinctUntilChanged((prev, next) =>
         prev.valueRef === next.valueRef
         && prev.nounsKey === next.nounsKey
-        && prev.verbsKey === next.verbsKey,
+        && prev.verbsKey === next.verbsKey
+        && prev.contentType === next.contentType
+        && prev.contentValue === next.contentValue,
       ),
     ).subscribe(() => {
       this.queueRender();
@@ -799,7 +807,10 @@ export class BoxTree extends Forest<BoxTreeState> {
     this.#uxMapFn = uxMapFn;
     this.#uxApplyToChildren = applyToChildren;
 
-    this.#ux?.clear();
+    this.#ux?.destroy?.();
+    if (this.#ux && !this.#ux.destroy) {
+      this.#ux.clear();
+    }
     this.#ux = uxMapFn(this);
     this.#uxResolved = true;
 
@@ -811,7 +822,10 @@ export class BoxTree extends Forest<BoxTreeState> {
   }
 
   clearUx(applyToChildren = true): void {
-    this.#ux?.clear();
+    this.#ux?.destroy?.();
+    if (this.#ux && !this.#ux.destroy) {
+      this.#ux.clear();
+    }
     this.#ux = undefined;
     this.#uxMapFn = undefined;
     this.#uxResolved = false;
