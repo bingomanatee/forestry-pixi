@@ -31,11 +31,15 @@ const meta: Meta<WindowArgs> = {
                 x: 10, y: 20,
                 width: 500,
                 height: 300,
+                closable: true,
                 backgroundColor: {
                     r: 1, g: 0, b: 0
                 },
                 isDraggable: true,
                 zIndex: 1,
+                onClose: ({id}) => {
+                    console.log(`Closed window: ${id}`);
+                },
                 titlebar: {
                     title: 'On Hover Mode',
                     mode: 'onHover',
@@ -52,6 +56,7 @@ const meta: Meta<WindowArgs> = {
                 y: 20,
                 width: 400,
                 height: 250,
+                closable: true,
                 backgroundColor: {
                     r: 0, g: 0.5, b: 1
                 },
@@ -73,6 +78,7 @@ const meta: Meta<WindowArgs> = {
                 y: 350,
                 width: 300,
                 height: 200,
+                closable: true,
                 minWidth: 100,
                 minHeight: 100,
                 backgroundColor: {
@@ -104,4 +110,3 @@ type Story = StoryObj<WindowArgs>;
 export const ThreeWindows: Story = {
     args: {},
 };
-

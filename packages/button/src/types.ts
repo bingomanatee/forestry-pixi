@@ -61,39 +61,39 @@ export type ButtonConfig = z.input<typeof ButtonConfigSchema>;
  *   button.icon.size.x, button.icon.size.y
  *   button.icon.alpha
  *   button.padding.x, button.padding.y
- *   button.stroke.color, button.stroke.alpha, button.stroke.width
+ *   button.stroke.color, button.stroke.alpha, button.stroke.size
  *   button.fill.color, button.fill.alpha
- *   button.borderRadius
+ *   button.border.radius
  *
  * IconVertical button (icon with label below):
- *   button.iconVertical.icon.size.x, button.iconVertical.icon.size.y
- *   button.iconVertical.icon.alpha
- *   button.iconVertical.padding.x, button.iconVertical.padding.y
- *   button.iconVertical.stroke.color, button.iconVertical.stroke.alpha, button.iconVertical.stroke.width
- *   button.iconVertical.fill.color, button.iconVertical.fill.alpha
- *   button.iconVertical.borderRadius
- *   button.iconVertical.label.fontSize, button.iconVertical.label.color, button.iconVertical.label.alpha
- *   button.iconVertical.iconGap (gap between icon and label)
+ *   button.icon.vertical.icon.size.x, button.icon.vertical.icon.size.y
+ *   button.icon.vertical.icon.alpha
+ *   button.icon.vertical.padding.x, button.icon.vertical.padding.y
+ *   button.icon.vertical.stroke.color, button.icon.vertical.stroke.alpha, button.icon.vertical.stroke.size
+ *   button.icon.vertical.fill.color, button.icon.vertical.fill.alpha
+ *   button.icon.vertical.border.radius
+ *   button.icon.vertical.label.font.size, button.icon.vertical.label.font.color, button.icon.vertical.label.font.alpha
+ *   button.icon.vertical.icon.gap (gap between icon and label)
  *
  * Text button:
  *   button.text.padding.x, button.text.padding.y
  *   button.text.fill.color, button.text.fill.alpha
- *   button.text.stroke.color, button.text.stroke.alpha, button.text.stroke.width
- *   button.text.borderRadius
- *   button.text.label.fontSize, button.text.label.color, button.text.label.alpha
+ *   button.text.stroke.color, button.text.stroke.alpha, button.text.stroke.size
+ *   button.text.border.radius
+ *   button.text.label.font.size, button.text.label.font.color, button.text.label.font.alpha
  *
  * Inline button (icon + text side-by-side):
  *   button.inline.icon.size.x, button.inline.icon.size.y
  *   button.inline.icon.alpha
- *   button.inline.iconGap (gap between left icon and label)
- *   button.inline.rightIcon.size.x, button.inline.rightIcon.size.y
- *   button.inline.rightIcon.alpha
- *   button.inline.rightIconGap (gap between label and right icon)
+ *   button.inline.icon.gap (gap between left icon and label)
+ *   button.inline.right.icon.size.x, button.inline.right.icon.size.y
+ *   button.inline.right.icon.alpha
+ *   button.inline.right.icon.gap (gap between label and right icon)
  *   button.inline.padding.x, button.inline.padding.y
  *   button.inline.fill.color, button.inline.fill.alpha
- *   button.inline.stroke.color, button.inline.stroke.alpha, button.inline.stroke.width
- *   button.inline.borderRadius
- *   button.inline.label.fontSize, button.inline.label.color, button.inline.label.alpha
+ *   button.inline.stroke.color, button.inline.stroke.alpha, button.inline.stroke.size
+ *   button.inline.border.radius
+ *   button.inline.label.font.size, button.inline.label.font.color, button.inline.label.font.alpha
  *
  * States: hover, disabled
  * Variants: primary, secondary, danger, etc. (inserted after button)

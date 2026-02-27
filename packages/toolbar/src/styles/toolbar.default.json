@@ -21,17 +21,17 @@
       "$*": {
         "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
         "alpha": 1,
-        "width": 1
+        "size": 1
       },
       "$hover": {
         "color": { "r": 0.7, "g": 0.7, "b": 0.7 },
         "alpha": 1,
-        "width": 1
+        "size": 1
       },
       "$disabled": {
         "color": { "r": 0.85, "g": 0.85, "b": 0.85 },
         "alpha": 0.5,
-        "width": 1
+        "size": 1
       }
     },
     "fill": {
@@ -44,10 +44,10 @@
       "padding": {
         "$*": { "x": 12, "y": 6 }
       },
-      "borderRadius": {
+      "border.radius": {
         "$*": 4
       },
-      "iconGap": {
+      "icon.gap": {
         "$*": 8
       },
       "icon": {
@@ -82,32 +82,34 @@
         "$*": {
           "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
           "alpha": 0,
-          "width": 0
+          "size": 0
         },
         "$hover": {
           "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
           "alpha": 0,
-          "width": 0
+          "size": 0
         },
         "$disabled": {
           "color": { "r": 0.67, "g": 0.67, "b": 0.67 },
           "alpha": 1,
-          "width": 2
+          "size": 2
         }
       },
       "label": {
-        "fontSize": {
-          "$*": 13
-        },
-        "color": {
-          "$*": { "r": 1, "g": 1, "b": 1 },
-          "$hover": { "r": 1, "g": 1, "b": 1 },
-          "$disabled": { "r": 0.7, "g": 0.7, "b": 0.7 }
-        },
-        "alpha": {
-          "$*": 1,
-          "$hover": 1,
-          "$disabled": 0.5
+        "font": {
+          "size": {
+            "$*": 13
+          },
+          "color": {
+            "$*": { "r": 1, "g": 1, "b": 1 },
+            "$hover": { "r": 1, "g": 1, "b": 1 },
+            "$disabled": { "r": 0.7, "g": 0.7, "b": 0.7 }
+          },
+          "alpha": {
+            "$*": 1,
+            "$hover": 1,
+            "$disabled": 0.5
+          }
         }
       }
     },
@@ -115,7 +117,7 @@
       "padding": {
         "$*": { "x": 12, "y": 6 }
       },
-      "borderRadius": {
+      "border.radius": {
         "$*": 4
       },
       "fill": {
@@ -136,36 +138,38 @@
         "$*": {
           "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
           "alpha": 0,
-          "width": 0
+          "size": 0
         },
         "$hover": {
           "color": { "r": 0.5, "g": 0.5, "b": 0.5 },
           "alpha": 0,
-          "width": 0
+          "size": 0
         },
         "$disabled": {
           "color": { "r": 0.67, "g": 0.67, "b": 0.67 },
           "alpha": 1,
-          "width": 2
+          "size": 2
         }
       },
       "label": {
-        "fontSize": {
-          "$*": 13
-        },
-        "color": {
-          "$*": { "r": 1, "g": 1, "b": 1 },
-          "$hover": { "r": 1, "g": 1, "b": 1 },
-          "$disabled": { "r": 0.7, "g": 0.7, "b": 0.7 }
-        },
-        "alpha": {
-          "$*": 1,
-          "$hover": 1,
-          "$disabled": 0.5
+        "font": {
+          "size": {
+            "$*": 13
+          },
+          "color": {
+            "$*": { "r": 1, "g": 1, "b": 1 },
+            "$hover": { "r": 1, "g": 1, "b": 1 },
+            "$disabled": { "r": 0.7, "g": 0.7, "b": 0.7 }
+          },
+          "alpha": {
+            "$*": 1,
+            "$hover": 1,
+            "$disabled": 0.5
+          }
         }
       }
     },
-    "iconVertical": {
+    "icon.vertical": {
       "padding": {
         "$*": { "x": 4, "y": 4 }
       },
@@ -184,19 +188,21 @@
         }
       },
       "label": {
-        "fontSize": {
-          "$*": 12
+        "font": {
+          "size": {
+            "$*": 12
+          },
+          "color": {
+            "$*": { "r": 0, "g": 0, "b": 0 },
+            "$hover": { "r": 0, "g": 0, "b": 0 }
+          },
+          "alpha": {
+            "$*": 0.5,
+            "$hover": 1
+          }
         },
         "padding": {
           "$*": 4
-        },
-        "color": {
-          "$*": { "r": 0, "g": 0, "b": 0 },
-          "$hover": { "r": 0, "g": 0, "b": 0 }
-        },
-        "alpha": {
-          "$*": 0.5,
-          "$hover": 1
         }
       }
     }

@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.0.1 - 2026-02-26
+## 1.1.1 - 2026-02-27
 
-- Bumped package version by +0.0.1.
-- Bumped dependency ranges by +0.0.1 where applicable.
+- Instituted a deeper style-key pattern using dot-separated noun parts, with interCaps compatibility in style-tree.
+- Raised the Node runtime baseline to `>=20.0.0`.

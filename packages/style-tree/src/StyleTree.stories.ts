@@ -25,24 +25,24 @@ const meta: Meta<StyleTreeArgs> = {
     const tree = new StyleTree();
 
     // Add styles with different specificity levels
-    tree.set('base.*.label', [], { color: '#666', fontSize: 12 });
-    tree.set('navigation.*.text', [], { color: '#333', fontSize: 14 });
-    tree.set('navigation.button.text', [], { color: '#000', fontSize: 14 });
-    tree.set('navigation.button.text', ['hover'], { color: '#0066cc', fontSize: 14 });
-    tree.set('navigation.button.text', ['disabled'], { color: '#999', fontSize: 14 });
-    tree.set('navigation.button.text', ['disabled', 'selected'], { color: '#666', fontSize: 14 });
-    tree.set('navigation.button.icon', ['*'], { color: '#444', fontSize: 16 });
-    tree.set('navigation.button.icon', ['hover'], { color: '#0066cc', fontSize: 16 });
+    tree.set('base.*.label.font', [], { color: '#666', size: 12 });
+    tree.set('navigation.*.text.font', [], { color: '#333', size: 14 });
+    tree.set('navigation.button.text.font', [], { color: '#000', size: 14 });
+    tree.set('navigation.button.text.font', ['hover'], { color: '#0066cc', size: 14 });
+    tree.set('navigation.button.text.font', ['disabled'], { color: '#999', size: 14 });
+    tree.set('navigation.button.text.font', ['disabled', 'selected'], { color: '#666', size: 14 });
+    tree.set('navigation.button.icon.font', ['*'], { color: '#444', size: 16 });
+    tree.set('navigation.button.icon.font', ['hover'], { color: '#0066cc', size: 16 });
 
     // Test queries
     const queries = [
-      { nouns: ['base', 'anything', 'label'], states: [] as string[], desc: 'Wildcard match' },
-      { nouns: ['navigation', 'sidebar', 'text'], states: [] as string[], desc: 'Partial wildcard' },
-      { nouns: ['navigation', 'button', 'text'], states: [] as string[], desc: 'Exact match (no state)' },
-      { nouns: ['navigation', 'button', 'text'], states: ['hover'], desc: 'Exact match with state' },
-      { nouns: ['navigation', 'button', 'text'], states: ['disabled', 'selected'], desc: 'Multi-state match' },
-      { nouns: ['navigation', 'button', 'icon'], states: ['active'], desc: 'Base state match (*)' },
-      { nouns: ['navigation', 'button', 'icon'], states: ['hover'], desc: 'Specific state beats base' },
+      { nouns: ['base', 'anything', 'label', 'font'], states: [] as string[], desc: 'Wildcard match' },
+      { nouns: ['navigation', 'sidebar', 'text', 'font'], states: [] as string[], desc: 'Partial wildcard' },
+      { nouns: ['navigation', 'button', 'text', 'font'], states: [] as string[], desc: 'Exact match (no state)' },
+      { nouns: ['navigation', 'button', 'text', 'font'], states: ['hover'], desc: 'Exact match with state' },
+      { nouns: ['navigation', 'button', 'text', 'font'], states: ['disabled', 'selected'], desc: 'Multi-state match' },
+      { nouns: ['navigation', 'button', 'icon', 'font'], states: ['active'], desc: 'Base state match (*)' },
+      { nouns: ['navigation', 'button', 'icon', 'font'], states: ['hover'], desc: 'Specific state beats base' },
     ];
 
     // Create results table
@@ -83,8 +83,8 @@ const meta: Meta<StyleTreeArgs> = {
         <td style="padding: 10px; color: #0066cc;">${match?.key || 'No match'}</td>
         <td style="padding: 10px;">${match?.score || '-'}</td>
         <td style="padding: 10px;">
-          ${match ? `<span style="color: ${match.value.color}; font-size: ${match.value.fontSize}px;">
-            color: ${match.value.color}, size: ${match.value.fontSize}
+          ${match ? `<span style="color: ${match.value.color}; font-size: ${match.value.size}px;">
+            color: ${match.value.color}, size: ${match.value.size}
           </span>` : '-'}
         </td>
       `;
@@ -275,4 +275,3 @@ export const JSONDigestion: Story = {
     return wrapper;
   },
 };
-

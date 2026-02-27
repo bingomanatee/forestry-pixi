@@ -16,7 +16,7 @@ import {
  * Map<nounPath, Map<stateKey, value>>
  *
  * Example:
- * "nav.button.bgColor" -> {
+ * "nav.button.bg.color" -> {
  *   "" -> "black",           // no states
  *   "*" -> "red",            // base state
  *   "hover" -> "blue",       // single state
@@ -35,6 +35,7 @@ export class StyleTree {
     this.options = {
       validateKeys: options.validateKeys ?? true,
       autoSortStates: options.autoSortStates ?? true,
+      normalizeInterCaps: options.normalizeInterCaps ?? true,
     };
   }
 
@@ -46,10 +47,10 @@ export class StyleTree {
    * @param states - States as array (e.g., ["disabled", "selected"], ["hover"], or [] for no states)
    * @param value - Style value (can be any type)
    * @example
-   * tree.set('nav.button.bgColor', ['*'], 'red')
-   * tree.set('nav.button.bgColor', ['hover'], 'blue')
-   * tree.set('nav.button.bgColor', ['disabled', 'selected'], 'gray')
-   * tree.set('nav.button.bgColor', [], 'black')
+   * tree.set('nav.button.bg.color', ['*'], 'red')
+   * tree.set('nav.button.bg.color', ['hover'], 'blue')
+   * tree.set('nav.button.bg.color', ['disabled', 'selected'], 'gray')
+   * tree.set('nav.button.bg.color', [], 'black')
    */
   set(nouns: string, states: string[], value: any): void {
     const { nounKey, stateKey } = this.buildKeys(nouns, states);
@@ -100,11 +101,47 @@ export class StyleTree {
   }
 
   /**
+   * Expand interCaps noun segments into dot-separated, lower-case parts.
+   * Examples:
+   * - "fontSize" -> "font.size"
+   * - "iconVertical" -> "icon.vertical"
+   */
+  private normalizeNounSegment(segment: string): string[] {
+    const trimmed = segment.trim();
+    if (!trimmed) {
+      return [];
+    }
+    if (!this.options.normalizeInterCaps || trimmed === '*') {
+      return [trimmed];
+    }
+
+    const expanded = trimmed
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1.$2')
+      .replace(/([a-z0-9])([A-Z])/g, '$1.$2')
+      .toLowerCase();
+
+    return expanded.split('.').filter(Boolean);
+  }
+
+  private normalizeNounKey(nouns: string): string {
+    return nouns
+      .split('.')
+      .flatMap((segment) => this.normalizeNounSegment(segment))
+      .join('.');
+  }
+
+  private normalizeNounQuery(nouns: string[]): string[] {
+    return nouns
+      .flatMap((segment) => segment.split('.'))
+      .flatMap((segment) => this.normalizeNounSegment(segment));
+  }
+
+  /**
    * Helper method to build noun and state keys from inputs
    * @private
    */
   private buildKeys(nouns: string, states: string[]): { nounKey: string; stateKey: string } {
-    const nounKey = nouns;
+    const nounKey = this.normalizeNounKey(nouns);
 
     // Sort states if enabled
     const normalizedStates = this.options.autoSortStates ? normalizeStates(states) : states;
@@ -171,19 +208,24 @@ export class StyleTree {
    * style exists. Example: ["button", "icon"] -> fallback ["icon"].
    */
   matchHierarchy(query: StyleQuery): any {
-    const hierarchical = this.match(query);
+    const normalizedQuery: StyleQuery = {
+      nouns: this.normalizeNounQuery(query.nouns),
+      states: query.states,
+    };
+
+    const hierarchical = this.match(normalizedQuery);
     if (hierarchical !== undefined) {
       return hierarchical;
     }
 
-    const leaf = query.nouns[query.nouns.length - 1];
-    if (!leaf || query.nouns.length <= 1) {
+    const leaf = normalizedQuery.nouns[normalizedQuery.nouns.length - 1];
+    if (!leaf || normalizedQuery.nouns.length <= 1) {
       return undefined;
     }
 
     return this.match({
       nouns: [leaf],
-      states: query.states,
+      states: normalizedQuery.states,
     });
   }
 
@@ -203,7 +245,7 @@ export class StyleTree {
    * @returns Array of matches sorted by score
    */
   findAllMatches(query: StyleQuery): StyleMatch[] {
-    const targetNouns = query.nouns;
+    const targetNouns = this.normalizeNounQuery(query.nouns);
     const targetStates = query.states;
     const normalizedTargetStates = normalizeStates(targetStates);
 

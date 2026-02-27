@@ -32,7 +32,40 @@ windows.addWindow('notes', {
   height: 280,
   isDraggable: true,
   isResizeable: true,
+  closable: true,
+  onClose: ({ id }) => {
+    console.log(`Closed ${id}`);
+  },
   titlebar: { title: 'Notes' },
+});
+```
+
+## Label Styling
+
+Window title text is styled from `window.label.*` style properties:
+
+- `window.label.font.size`
+- `window.label.font.family`
+- `window.label.font.color`
+- `window.label.font.alpha`
+- `window.label.font.visible`
+
+Default label style: `10px Helvetica` with black text.
+
+```ts
+windows.addWindow('notes', {
+  titlebar: { title: 'Notes' },
+  customStyle: {
+    label: {
+      font: {
+        size: 12,
+        family: 'Arial',
+        color: { r: 1, g: 1, b: 1 },
+        alpha: 1,
+        visible: true,
+      },
+    },
+  },
 });
 ```
 

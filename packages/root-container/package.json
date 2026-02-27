@@ -1,6 +1,6 @@
 {
   "name": "@wonderlandlabs-pixi-ux/root-container",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "Root container with centered origin and zoom/pan support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,5 +21,8 @@
     "@wonderlandlabs/forestry4": "^4.1.15",
     "immer": "^11.1.4",
     "pixi.js": "^8.15.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

@@ -8,6 +8,7 @@ A hierarchical style matching system with noun paths and state arrays.
 - State-based selection (`hover`, `disabled`, `selected`, ...)
 - Wildcard matching in noun segments (`base.*.label`)
 - Base-state matching with `*` state
+- Automatic interCaps normalization (`fontSize` -> `font.size`)
 - Hierarchical-to-atomic fallback via `matchHierarchy()`
 - Ranking by specificity
 
@@ -24,18 +25,22 @@ import { StyleTree } from '@wonderlandlabs-pixi-ux/style-tree';
 
 const tree = new StyleTree();
 
-tree.set('base.*.label', [], { color: '#666', fontSize: 12 });
-tree.set('navigation.button.text', [], { color: '#000', fontSize: 14 });
-tree.set('navigation.button.text', ['hover'], { color: '#0066cc', fontSize: 14 });
-tree.set('navigation.button.text', ['disabled', 'selected'], { color: '#999', fontSize: 14 });
+// Prefer dot-separated noun parts over compound keys:
+// use "font.size" instead of "fontSize".
+tree.set('base.*.label.font.size', [], 12);
+tree.set('base.*.label.font.color', [], '#666');
+tree.set('navigation.button.text.font.size', [], 14);
+tree.set('navigation.button.text.font.color', [], '#000');
+tree.set('navigation.button.text.font.color', ['hover'], '#0066cc');
+tree.set('navigation.button.text.font.color', ['disabled', 'selected'], '#999');
 
 const style = tree.match({
-  nouns: ['navigation', 'button', 'text'],
+  nouns: ['navigation', 'button', 'text', 'font', 'color'],
   states: ['hover'],
 });
 
 const match = tree.findBestMatch({
-  nouns: ['navigation', 'button', 'text'],
+  nouns: ['navigation', 'button', 'text', 'font', 'color'],
   states: ['hover'],
 });
 
@@ -45,6 +50,12 @@ const iconStyle = tree.matchHierarchy({
   nouns: ['button', 'icon'],
   states: ['disabled'],
 });
+
+// Legacy interCaps keys are normalized automatically.
+tree.set('button.label.fontSize', [], 12);
+tree.get('button.label.font.size', []); // 12
+tree.set('windowLabelFontSize', [], 10);
+tree.get('window.label.font.size', []); // 10
 ```
 
 ## Matching Rules
@@ -63,6 +74,7 @@ Constructor:
 - `new StyleTree(options?)`
   - `validateKeys?: boolean` (default `true`)
   - `autoSortStates?: boolean` (default `true`)
+  - `normalizeInterCaps?: boolean` (default `true`)
 
 Methods:
 - `set(nouns: string, states: string[], value: unknown): void`
@@ -72,6 +84,72 @@ Methods:
 - `matchHierarchy(query: { nouns: string[]; states: string[] }): unknown`
 - `findBestMatch(query): StyleMatch | undefined`
 - `findAllMatches(query): StyleMatch[]`
+
+## Canonical Style Conventions
+
+This package does not assume any sort of heirarchy or keys for nouns; you can organize your styles however you like.
+However withn the @wonderlandlabs-pixi-ux family of modules we have established a pattern, documented below; 
+
+```aiignore
+context[.context].topic.propewrty
+```
+as in, window.panel (context) .font (topic) .size (property). this is comparable but not strictly analogous to the 
+IBM convention Base, Element, Modifer (BEM). 
+
+
+For consistency across packages, the style package now exposes canonical key conventions:
+General naming rule: avoid compound keys such as `fontSize` in favor of dot-separated noun parts like `font.size`.
+Nouns and verbs should be lowercase across the board, unless you expect and want to have your nouns split up.
+This is true in the setter(s) and the getter(s) but it is really best if you express all noun keys in lowercase 
+fully exploded termas as described below.
+
+- `*.font.size` (number, px)
+- `*.font.color` (hex string)
+- `*.font.family` (string)
+- `*.font.alpha` (0..1)
+- `*.font.visible` (boolean)
+- `*.fill.size` (number)
+- `*.fill.color` (hex string)
+- `*.fill.alpha` (0..1)
+- `*.fill.visible` (boolean)
+- `*.stroke.size` (number)
+- `*.stroke.color` (hex string)
+- `*.stroke.alpha` (0..1)
+- `*.stroke.visible` (boolean)
+
+Helpers:
+- `normalizeStyleConvention(partial)`
+- `setConvention(tree, path, states, partial)`
+- `conventionKeys(path)`
+
+### Example
+
+```typescript
+import { StyleTree, setConvention } from '@wonderlandlabs-pixi-ux/style-tree';
+
+const tree = new StyleTree();
+setConvention(tree, 'window.label', [], {
+  font: {
+    size: 10,
+    family: 'Helvetica',
+    color: '#000000',
+    alpha: 1,
+    visible: true,
+  },
+  fill: {
+    size: 0,
+    color: '#000000',
+    alpha: 1,
+    visible: true,
+  },
+  stroke: {
+    size: 1,
+    color: '#000000',
+    alpha: 1,
+    visible: true,
+  },
+});
+```
 
 ## JSON Tree Digestion
 
@@ -96,6 +174,11 @@ const themeJSON = {
 
 const tree = fromJSON(themeJSON);
 ```
+
+## A note on stored values
+
+This library does not make any assumptions about which values should be stored in which keys; type validation
+must be done by the using context. (hint - Zod can take a lot of pain out of the process.)
 
 ## License
 

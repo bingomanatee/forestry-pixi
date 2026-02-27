@@ -7,6 +7,7 @@ import rgbToColor from "./rgbToColor";
 import type {Subscription} from "rxjs";
 import {TITLEBAR_MODE} from "./constants";
 import {WindowStore} from "./WindowStore";
+import type {WindowLabelFontStyle} from "./types";
 
 interface TitlebarStoreValue extends TitlebarConfig {
     isDirty: boolean;
@@ -26,7 +27,8 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
     });
     #contentContainer: Container = new Container({
         x: 0,
-        y: 0
+        y: 0,
+        sortableChildren: true,
     });
     #background: Graphics = new Graphics({label: 'backgroundGraphics'});
     #titleText: Text = new Text({
@@ -37,6 +39,7 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
         },
     });
     #iconSprite?: Sprite;
+    #closeButton?: Graphics;
     widthSubscription?: Subscription;
     configSubscription?: Subscription;
 
@@ -126,6 +129,7 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
         this.#refreshContainer();
         this.#refreshBackground();
         this.#refreshIcon();
+        this.#refreshCloseButton();
         this.#refreshTitle();
 
         // Call custom render function if provided
@@ -215,9 +219,10 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
     }
 
     #refreshTitle() {
-        const {title, fontSize, textColor, icon} = this.value;
+        const {title, icon, padding, height, showCloseButton} = this.value;
         const windowStore = this.$parent as WindowStore;
-        const {zIndex} = windowStore.value;
+        const width = windowStore?.value?.width || 0;
+        const labelStyle = this.#resolveLabelStyle();
 
         // Add to content container if not already added
         if (!this.#titleText.parent) {
@@ -225,19 +230,96 @@ export class TitlebarStore extends TickerForest<TitlebarStoreValue> {
             this.#titleText.zIndex = 1;  // Above background
         }
 
-        // Use style text color if variant is set, otherwise use explicit textColor
-        const style = windowStore?.resolvedStyle;
-        const txtColor = windowStore?.value?.variant ? style?.titlebarTextColor : textColor;
-
         // Update text properties
-        this.#titleText.text = `${title} [${zIndex}]`;
-        this.#titleText.style.fontSize = fontSize;
-        this.#titleText.style.fill = rgbToColor(txtColor ?? textColor);
-        this.#titleText.y = -0.66 * fontSize;
+        this.#titleText.text = title;
+        this.#titleText.style.fontSize = labelStyle.size;
+        this.#titleText.style.fontFamily = labelStyle.family;
+        this.#titleText.style.fill = rgbToColor(labelStyle.color);
+        this.#titleText.alpha = labelStyle.visible ? labelStyle.alpha : 0;
+        this.#titleText.style.wordWrap = true;
+        this.#titleText.y = -0.66 * labelStyle.size;
 
         // Offset title if icon is present
         const iconOffset = icon ? (icon.width + 4) : 0;
         this.#titleText.x = iconOffset;
+
+        const buttonReserve = showCloseButton
+            ? this.#closeButtonSize(height, padding ?? 0) + 8
+            : 0;
+        this.#titleText.style.wordWrapWidth = Math.max(
+            0,
+            width - ((padding ?? 0) * 2) - iconOffset - buttonReserve
+        );
+    }
+
+    #resolveLabelStyle(): WindowLabelFontStyle {
+        const windowStore = this.$parent as WindowStore | undefined;
+        const resolved = windowStore?.resolvedStyle?.label?.font;
+        return {
+            size: resolved?.size ?? this.value.fontSize ?? 10,
+            family: resolved?.family ?? 'Helvetica',
+            color: resolved?.color ?? this.value.textColor ?? {r: 0, g: 0, b: 0},
+            alpha: resolved?.alpha ?? 1,
+            visible: resolved?.visible ?? true,
+        };
+    }
+
+    #closeButtonSize(height: number, padding: number): number {
+        return Math.max(10, Math.min(18, height - (padding * 2) - 6));
+    }
+
+    #refreshCloseButton() {
+        const {showCloseButton, height, padding} = this.value;
+        const windowStore = this.$parent as WindowStore | undefined;
+        const width = windowStore?.value?.width || 0;
+
+        if (!showCloseButton) {
+            if (this.#closeButton) {
+                this.#closeButton.visible = false;
+            }
+            return;
+        }
+
+        if (!this.#closeButton) {
+            this.#closeButton = new Graphics({label: 'titlebar-close-button'});
+            this.#closeButton.eventMode = 'static';
+            this.#closeButton.cursor = 'pointer';
+            this.#closeButton.zIndex = 3;
+            this.#closeButton.on('pointerdown', (event) => {
+                event.stopPropagation();
+            });
+            this.#closeButton.on('pointerup', (event) => {
+                event.stopPropagation();
+            });
+            this.#closeButton.on('pointertap', (event) => {
+                event.stopPropagation();
+                const parent = this.$parent as WindowStore | undefined;
+                parent?.requestClose();
+            });
+        }
+
+        if (this.#closeButton.parent !== this.#contentContainer) {
+            this.#contentContainer.addChild(this.#closeButton);
+        }
+
+        const resolvedPadding = padding ?? 0;
+        const size = this.#closeButtonSize(height, resolvedPadding);
+        const symbolColor = rgbToColor(this.#resolveLabelStyle().color);
+        const inset = Math.max(2, size * 0.3);
+        const half = size / 2;
+
+        this.#closeButton.visible = true;
+        this.#closeButton.clear();
+        this.#closeButton.roundRect(-half, -half, size, size, 3)
+            .fill({color: 0x000000, alpha: 0.25});
+        this.#closeButton.moveTo(-half + inset, -half + inset)
+            .lineTo(half - inset, half - inset)
+            .stroke({color: symbolColor, width: 2});
+        this.#closeButton.moveTo(half - inset, -half + inset)
+            .lineTo(-half + inset, half - inset)
+            .stroke({color: symbolColor, width: 2});
+        this.#closeButton.x = Math.max(half, width - (resolvedPadding * 2) - half);
+        this.#closeButton.y = 0;
     }
 
     protected isDirty(): boolean {

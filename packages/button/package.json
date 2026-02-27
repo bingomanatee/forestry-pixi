@@ -1,6 +1,6 @@
 {
   "name": "@wonderlandlabs-pixi-ux/button",
-  "version": "1.0.2",
+  "version": "1.1.1",
   "description": "Button component using box system with StyleTree styling for wonderlandlabs-pixi-ux",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,5 +26,8 @@
   "devDependencies": {
     "typescript": "^5.5.4",
     "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

@@ -1,6 +1,6 @@
 import {Application, Assets, Container, Texture} from 'pixi.js';
 import {Forest} from "@wonderlandlabs/forestry4";
-import {WindowDef, WindowDefInput, WindowDefSchema, WindowStoreClass, WindowStoreValue, ZIndexData, PartialWindowStyle, TextureDef} from './types';
+import {WindowDef, WindowDefInput, WindowDefSchema, WindowStoreClass, WindowStoreValue, ZIndexData, PartialWindowStyle, TextureDef, WindowCloseHandler} from './types';
 import {WindowStore} from "./WindowStore";
 
 // Texture status constants
@@ -113,12 +113,22 @@ export class WindowsManager extends Forest<WindowStoreValue> {
 
     addWindow(key: string, value: Omit<WindowDefInput, 'id'>) {
         // Extract customStyle and storeClass before parsing (they're not part of the schema)
-        const {customStyle, storeClass, ...windowDef} = value;
+        const {customStyle, storeClass, closable, onClose, ...windowDef} = value;
         if (customStyle) {
             this.#customStyles.set(key, customStyle);
         }
         if (storeClass) {
             this.#storeClasses.set(key, storeClass);
+        }
+        if (closable !== undefined) {
+            this.#closableMap.set(key, closable);
+        } else {
+            this.#closableMap.delete(key);
+        }
+        if (onClose) {
+            this.#onCloseMap.set(key, onClose);
+        } else {
+            this.#onCloseMap.delete(key);
         }
         this.set(['windows', key], WindowDefSchema.parse({...windowDef, id: key}));
     }
@@ -151,6 +161,9 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         if (customStyle) {
             branch.customStyle = customStyle;
         }
+        const closable = this.#closableMap.get(key) ?? false;
+        branch.setClosable(closable);
+        branch.setOnClose(this.#onCloseMap.get(key));
 
         branch.kickoff();
 
@@ -164,6 +177,8 @@ export class WindowsManager extends Forest<WindowStoreValue> {
     #contentMap = new Map<string, Container>();
     #customStyles = new Map<string, PartialWindowStyle>();
     #storeClasses = new Map<string, WindowStoreClass>();
+    #closableMap = new Map<string, boolean>();
+    #onCloseMap = new Map<string, WindowCloseHandler>();
 
     windowBranch(id: string) {
         return this.#windowsBranches.get(id);
@@ -226,6 +241,10 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         }
         // Remove from content map
         this.#contentMap.delete(id);
+        this.#customStyles.delete(id);
+        this.#storeClasses.delete(id);
+        this.#closableMap.delete(id);
+        this.#onCloseMap.delete(id);
     }
 
     /**
@@ -440,4 +459,3 @@ export class WindowsManager extends Forest<WindowStoreValue> {
         }
     }
 }
-

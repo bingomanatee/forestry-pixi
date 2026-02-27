@@ -28,7 +28,6 @@ type TickerSource = Application | { ticker: Ticker };
 
 type IconRef = {
     tree: BoxTree;
-    host: Container;
     sprite?: Sprite;
     container?: Container;
     role: 'left' | 'right';
@@ -36,7 +35,6 @@ type IconRef = {
 
 type LabelRef = {
     tree: BoxTree;
-    host: Container;
     textDisplay: Text;
 };
 
@@ -246,30 +244,29 @@ export class ButtonStore extends TickerForest<ButtonState> {
         const container = role === 'right' ? this.#config.rightIcon : this.#config.icon;
         const tree = this.#addTreeChild(key, order);
         const iconUrl = this.#resolveIconContentUrl(role, sprite, container);
-        if (iconUrl) {
+        const hasExplicitContent = !!sprite || !!container;
+        if (iconUrl && !hasExplicitContent) {
             tree.setContent({ type: 'url', value: iconUrl });
         }
 
-        const host = new Container({ label: `${this.id}-${key}-host` });
-        if (sprite) {
-            if ('anchor' in sprite && sprite.anchor) {
-                sprite.anchor.set(0);
+        let host: Container | undefined;
+        if (hasExplicitContent) {
+            host = new Container({ label: `${this.id}-${key}-host` });
+            if (sprite) {
+                if ('anchor' in sprite && sprite.anchor) {
+                    sprite.anchor.set(0);
+                }
+                host.addChild(sprite);
+            } else if (container) {
+                host.addChild(container);
             }
-            host.addChild(sprite);
-        } else if (container) {
-            host.addChild(container);
+            this.#attachNodeContent(tree, host);
         }
-
-        this.#attachNodeContent(tree, host);
-        return { tree, host, sprite, container, role };
+        return { tree, sprite, container, role };
     }
 
     #createLabelRef(order: number): LabelRef {
         const tree = this.#addTreeChild('label', order);
-        tree.setContent({
-            type: 'text',
-            value: this.#config.label ?? '',
-        });
         const host = new Container({ label: `${this.id}-label-host` });
         const textDisplay = new Text({
             text: this.#config.label ?? '',
@@ -284,7 +281,7 @@ export class ButtonStore extends TickerForest<ButtonState> {
         host.addChild(textDisplay);
         this.#attachNodeContent(tree, host);
 
-        return { tree, host, textDisplay };
+        return { tree, textDisplay };
     }
 
     #buildChildren(): void {
@@ -393,7 +390,8 @@ export class ButtonStore extends TickerForest<ButtonState> {
         const fillAlpha = this.#getStyleForStates(states, 'fill', 'alpha') as number | undefined;
         const strokeColor = this.#getStyleForStates(states, 'stroke', 'color') as RgbColor | undefined;
         const strokeAlpha = this.#getStyleForStates(states, 'stroke', 'alpha') as number | undefined;
-        const strokeWidth = this.#getStyleForStates(states, 'stroke', 'width') as number | undefined;
+        const strokeWidth = (this.#getStyleForStates(states, 'stroke', 'size') as number | undefined)
+            ?? (this.#getStyleForStates(states, 'stroke', 'width') as number | undefined);
 
         const resolvedFillColor = fillColor
             ?? (this.#mode === 'text' || this.#mode === 'inline'
@@ -474,20 +472,32 @@ export class ButtonStore extends TickerForest<ButtonState> {
     }
 
     #labelStyle(): { textStyle: TextStyleOptions; alpha: number } {
-        const fontSize = (this.#getStyle('label', 'fontSize') as number | undefined) ?? 13;
-        const color = (this.#getStyle('label', 'color') as RgbColor | undefined) ?? this.#defaultLabelColor();
-        const alpha = (this.#getStyle('label', 'alpha') as number | undefined) ?? this.#defaultLabelAlpha();
+        const fontSize = (this.#getStyle('label', 'font', 'size') as number | undefined)
+            ?? (this.#getStyle('label', 'fontSize') as number | undefined)
+            ?? 13;
+        const color = (this.#getStyle('label', 'font', 'color') as RgbColor | undefined)
+            ?? (this.#getStyle('label', 'color') as RgbColor | undefined)
+            ?? this.#defaultLabelColor();
+        const alpha = (this.#getStyle('label', 'font', 'alpha') as number | undefined)
+            ?? (this.#getStyle('label', 'alpha') as number | undefined)
+            ?? this.#defaultLabelAlpha();
+        const visible = (this.#getStyle('label', 'font', 'visible') as boolean | undefined)
+            ?? (this.#getStyle('label', 'visible') as boolean | undefined)
+            ?? true;
+        const family = (this.#getStyle('label', 'font', 'family') as string | undefined)
+            ?? this.#config.bitmapFont
+            ?? 'Arial';
 
         const textStyle: TextStyleOptions = {
             fontSize,
             fill: rgbToHex(color),
             align: 'center',
-            fontFamily: this.#config.bitmapFont ?? 'Arial',
+            fontFamily: family,
         };
 
         return {
             textStyle,
-            alpha: this.#isDisabled ? alpha * 0.5 : alpha,
+            alpha: this.#isDisabled ? (visible ? alpha * 0.5 : 0) : (visible ? alpha : 0),
         };
     }
 
@@ -539,9 +549,11 @@ export class ButtonStore extends TickerForest<ButtonState> {
         const direction = this.#mode === 'iconVertical' ? 'column' : 'row';
         const isRow = direction === 'row';
 
+        const resolvedGap = (this.#getStyle('icon', 'gap') as number | undefined)
+            ?? (this.#getStyle('iconGap') as number | undefined);
         const gap = this.#mode === 'iconVertical'
-            ? ((this.#getStyle('iconGap') as number | undefined) ?? 4)
-            : (this.#mode === 'inline' ? ((this.#getStyle('iconGap') as number | undefined) ?? 8) : 0);
+            ? (resolvedGap ?? 4)
+            : (this.#mode === 'inline' ? (resolvedGap ?? 8) : 0);
 
         const paddingX = (this.#getStyle('padding', 'x') as number | undefined) ?? this.#defaultPaddingX();
         const paddingY = (this.#getStyle('padding', 'y') as number | undefined) ?? this.#defaultPaddingY();
@@ -641,10 +653,6 @@ export class ButtonStore extends TickerForest<ButtonState> {
 
         const { textStyle, alpha } = this.#labelStyle();
         this.#label.textDisplay.text = this.#config.label ?? '';
-        this.#label.tree.setContent({
-            type: 'text',
-            value: this.#config.label ?? '',
-        });
         this.#label.textDisplay.style = new TextStyle(textStyle);
         this.#label.textDisplay.alpha = alpha;
     }

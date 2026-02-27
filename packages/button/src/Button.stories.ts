@@ -16,16 +16,16 @@ function createDefaultStyleTree(): StyleTree {
     // Icon button styles
     tree.set('button.padding.x', [], 8);
     tree.set('button.padding.y', [], 8);
-    tree.set('button.borderRadius', [], 4);
+    tree.set('button.border.radius', [], 4);
     tree.set('button.icon.size.x', [], 32);
     tree.set('button.icon.size.y', [], 32);
     tree.set('button.icon.alpha', [], 1);
     tree.set('button.stroke.color', [], { r: 0.6, g: 0.6, b: 0.6 });
-    tree.set('button.stroke.width', [], 1);
+    tree.set('button.stroke.size', [], 1);
     tree.set('button.stroke.alpha', [], 1);
-    tree.set('button.label.fontSize', [], 11);
-    tree.set('button.label.color', [], { r: 0.2, g: 0.2, b: 0.2 });
-    tree.set('button.label.alpha', [], 0.8);
+    tree.set('button.label.font.size', [], 11);
+    tree.set('button.label.font.color', [], { r: 0.2, g: 0.2, b: 0.2 });
+    tree.set('button.label.font.alpha', [], 0.8);
     tree.set('button.label.padding', [], 8);
 
     // Icon button hover state
@@ -38,71 +38,71 @@ function createDefaultStyleTree(): StyleTree {
     tree.set('button.stroke.alpha', ['disabled'], 0.4);
 
     // IconVertical button styles (icon with label below)
-    tree.set('button.iconVertical.padding.x', [], 8);
-    tree.set('button.iconVertical.padding.y', [], 8);
-    tree.set('button.iconVertical.borderRadius', [], 4);
-    tree.set('button.iconVertical.icon.size.x', [], 32);
-    tree.set('button.iconVertical.icon.size.y', [], 32);
-    tree.set('button.iconVertical.icon.alpha', [], 1);
-    tree.set('button.iconVertical.iconGap', [], 6);
-    tree.set('button.iconVertical.stroke.color', [], { r: 0.6, g: 0.6, b: 0.6 });
-    tree.set('button.iconVertical.stroke.width', [], 1);
-    tree.set('button.iconVertical.stroke.alpha', [], 1);
-    tree.set('button.iconVertical.label.fontSize', [], 11);
-    tree.set('button.iconVertical.label.color', [], { r: 0.2, g: 0.2, b: 0.2 });
-    tree.set('button.iconVertical.label.alpha', [], 0.8);
+    tree.set('button.icon.vertical.padding.x', [], 8);
+    tree.set('button.icon.vertical.padding.y', [], 8);
+    tree.set('button.icon.vertical.border.radius', [], 4);
+    tree.set('button.icon.vertical.icon.size.x', [], 32);
+    tree.set('button.icon.vertical.icon.size.y', [], 32);
+    tree.set('button.icon.vertical.icon.alpha', [], 1);
+    tree.set('button.icon.vertical.icon.gap', [], 6);
+    tree.set('button.icon.vertical.stroke.color', [], { r: 0.6, g: 0.6, b: 0.6 });
+    tree.set('button.icon.vertical.stroke.size', [], 1);
+    tree.set('button.icon.vertical.stroke.alpha', [], 1);
+    tree.set('button.icon.vertical.label.font.size', [], 11);
+    tree.set('button.icon.vertical.label.font.color', [], { r: 0.2, g: 0.2, b: 0.2 });
+    tree.set('button.icon.vertical.label.font.alpha', [], 0.8);
 
     // IconVertical button hover state
-    tree.set('button.iconVertical.fill.color', ['hover'], { r: 0.9, g: 0.95, b: 1 });
-    tree.set('button.iconVertical.fill.alpha', ['hover'], 1);
-    tree.set('button.iconVertical.stroke.color', ['hover'], { r: 0.4, g: 0.6, b: 0.9 });
+    tree.set('button.icon.vertical.fill.color', ['hover'], { r: 0.9, g: 0.95, b: 1 });
+    tree.set('button.icon.vertical.fill.alpha', ['hover'], 1);
+    tree.set('button.icon.vertical.stroke.color', ['hover'], { r: 0.4, g: 0.6, b: 0.9 });
 
     // IconVertical button disabled state
-    tree.set('button.iconVertical.icon.alpha', ['disabled'], 0.4);
-    tree.set('button.iconVertical.stroke.alpha', ['disabled'], 0.4);
-    tree.set('button.iconVertical.label.alpha', ['disabled'], 0.4);
+    tree.set('button.icon.vertical.icon.alpha', ['disabled'], 0.4);
+    tree.set('button.icon.vertical.stroke.alpha', ['disabled'], 0.4);
+    tree.set('button.icon.vertical.label.font.alpha', ['disabled'], 0.4);
 
     // Text button styles
     tree.set('button.text.padding.x', [], 16);
     tree.set('button.text.padding.y', [], 8);
-    tree.set('button.text.borderRadius', [], 6);
+    tree.set('button.text.border.radius', [], 6);
     tree.set('button.text.fill.color', [], { r: 0.2, g: 0.5, b: 0.8 });
     tree.set('button.text.fill.alpha', [], 1);
-    tree.set('button.text.label.fontSize', [], 14);
-    tree.set('button.text.label.color', [], { r: 1, g: 1, b: 1 });
-    tree.set('button.text.label.alpha', [], 1);
+    tree.set('button.text.label.font.size', [], 14);
+    tree.set('button.text.label.font.color', [], { r: 1, g: 1, b: 1 });
+    tree.set('button.text.label.font.alpha', [], 1);
 
     // Text button hover state
     tree.set('button.text.fill.color', ['hover'], { r: 0.3, g: 0.6, b: 0.9 });
 
     // Text button disabled state
     tree.set('button.text.fill.alpha', ['disabled'], 0.5);
-    tree.set('button.text.label.alpha', ['disabled'], 0.5);
+    tree.set('button.text.label.font.alpha', ['disabled'], 0.5);
 
     // Inline button styles
     tree.set('button.inline.padding.x', [], 12);
     tree.set('button.inline.padding.y', [], 8);
-    tree.set('button.inline.borderRadius', [], 6);
-    tree.set('button.inline.iconGap', [], 8);
+    tree.set('button.inline.border.radius', [], 6);
+    tree.set('button.inline.icon.gap', [], 8);
     tree.set('button.inline.icon.size.x', [], 20);
     tree.set('button.inline.icon.size.y', [], 20);
     tree.set('button.inline.icon.alpha', [], 1);
     tree.set('button.inline.fill.color', [], { r: 0.15, g: 0.65, b: 0.45 });
     tree.set('button.inline.fill.alpha', [], 1);
-    tree.set('button.inline.label.fontSize', [], 14);
-    tree.set('button.inline.label.color', [], { r: 1, g: 1, b: 1 });
-    tree.set('button.inline.label.alpha', [], 1);
+    tree.set('button.inline.label.font.size', [], 14);
+    tree.set('button.inline.label.font.color', [], { r: 1, g: 1, b: 1 });
+    tree.set('button.inline.label.font.alpha', [], 1);
 
     // Inline button hover state - blue 1px border
     tree.set('button.inline.fill.color', ['hover'], { r: 0.1, g: 0.8, b: 0.6 });
     tree.set('button.inline.stroke.color', ['hover'], { r: 0.2, g: 0.4, b: 0.9 });
-    tree.set('button.inline.stroke.width', ['hover'], 1);
+    tree.set('button.inline.stroke.size', ['hover'], 1);
     tree.set('button.inline.stroke.alpha', ['hover'], 1);
 
     // Inline button disabled state
     tree.set('button.inline.fill.alpha', ['disabled'], 0.5);
     tree.set('button.inline.icon.alpha', ['disabled'], 0.5);
-    tree.set('button.inline.label.alpha', ['disabled'], 0.5);
+    tree.set('button.inline.label.font.alpha', ['disabled'], 0.5);
 
     // Primary variant (for text/inline buttons)
     tree.set('button.primary.text.fill.color', [], { r: 0.8, g: 0.2, b: 0.2 });

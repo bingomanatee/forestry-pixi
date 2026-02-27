@@ -1,5 +1,11 @@
 import {STYLE_VARIANT, type StyleVariant} from './constants';
-import type {RgbColor, WindowStyle, PartialWindowStyle} from './types';
+import type {
+    RgbColor,
+    WindowLabelFontStyle,
+    WindowLabelStyle,
+    WindowStyle,
+    PartialWindowStyle,
+} from './types';
 import styleVariantsJson from './styleVariants.json';
 
 // Style variants loaded from JSON
@@ -16,6 +22,31 @@ function mergeColor(base: RgbColor, override?: RgbColor): RgbColor {
     return override;
 }
 
+function mergeLabelFontStyle(
+    base: WindowLabelFontStyle,
+    override?: Partial<WindowLabelFontStyle>
+): WindowLabelFontStyle {
+    if (!override) {
+        return base;
+    }
+    return {
+        size: override.size ?? base.size,
+        family: override.family ?? base.family,
+        color: mergeColor(base.color, override.color),
+        alpha: override.alpha ?? base.alpha,
+        visible: override.visible ?? base.visible,
+    };
+}
+
+function mergeLabelStyle(base: WindowLabelStyle, override?: PartialWindowStyle['label']): WindowLabelStyle {
+    if (!override) {
+        return base;
+    }
+    return {
+        font: mergeLabelFontStyle(base.font, override.font),
+    };
+}
+
 /**
  * Blend user styles with a base style (variant or default).
  * User styles take precedence over base styles.
@@ -30,6 +61,7 @@ export function blendStyles(
         backgroundColor: mergeColor(baseStyle.backgroundColor, userStyle.backgroundColor),
         titlebarBackgroundColor: mergeColor(baseStyle.titlebarBackgroundColor, userStyle.titlebarBackgroundColor),
         titlebarTextColor: mergeColor(baseStyle.titlebarTextColor, userStyle.titlebarTextColor),
+        label: mergeLabelStyle(baseStyle.label, userStyle.label),
         borderColor: userStyle.borderColor ?? baseStyle.borderColor,
         borderWidth: userStyle.borderWidth ?? baseStyle.borderWidth,
         selectedBorderColor: mergeColor(baseStyle.selectedBorderColor, userStyle.selectedBorderColor),
@@ -49,4 +81,3 @@ export function resolveWindowStyle(
     const baseStyle = STYLE_VARIANTS[variant] ?? DEFAULT_STYLE;
     return blendStyles(baseStyle, userStyle);
 }
-

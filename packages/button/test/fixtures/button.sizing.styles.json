@@ -7,11 +7,11 @@
       "$*": { "size": { "x": 80, "y": 80 }, "alpha": 1 },
       "$hover": { "size": { "x": 96, "y": 96 }, "alpha": 1 }
     },
-    "iconVertical": {
+    "icon.vertical": {
       "padding": {
         "$*": { "x": 6, "y": 10 }
       },
-      "iconGap": {
+      "icon.gap": {
         "$*": 6
       },
       "icon": {
@@ -19,8 +19,10 @@
         "$hover": { "size": { "x": 74, "y": 76 }, "alpha": 1 }
       },
       "label": {
-        "fontSize": {
-          "$*": 10
+        "font": {
+          "size": {
+            "$*": 10
+          }
         }
       }
     },
@@ -29,8 +31,10 @@
         "$*": { "x": 12, "y": 6 }
       },
       "label": {
-        "fontSize": {
-          "$*": 10
+        "font": {
+          "size": {
+            "$*": 10
+          }
         }
       }
     }

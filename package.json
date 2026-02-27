@@ -1,6 +1,6 @@
 {
   "name": "@wonderlandlabs-pixi-ux/monorepo",
-  "version": "1.0.1",
+  "version": "1.1.1",
   "description": "monorepo with grid, panel, drag packages, and other utilities for wonderlandlabs-pixi-ux",
   "private": true,
   "workspaces": [
@@ -31,5 +31,8 @@
     "typescript": "^5.5.4",
     "vitest": "^4.0.18"
   },
-  "packageManager": "yarn@4.0.2"
+  "packageManager": "yarn@4.0.2",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

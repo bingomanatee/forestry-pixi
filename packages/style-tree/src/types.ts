@@ -75,6 +75,8 @@ export interface StyleTreeOptions {
   validateKeys?: boolean;
   /** Whether to auto-sort states (default: true) */
   autoSortStates?: boolean;
+  /** Whether to normalize interCaps nouns into dot-separated parts (default: true) */
+  normalizeInterCaps?: boolean;
 }
 
 /**
@@ -86,4 +88,3 @@ export const WILDCARD = '*';
  * Base state constant (matches any state)
  */
 export const BASE_STATE = '*';
-

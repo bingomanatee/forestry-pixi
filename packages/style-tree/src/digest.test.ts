@@ -9,7 +9,9 @@ describe('digest', () => {
         button: {
           '$*': {
             color: 'black',
-            fontSize: 14,
+            font: {
+              size: 14,
+            },
           },
           $hover: {
             color: 'blue',
@@ -20,7 +22,7 @@ describe('digest', () => {
       const tree = fromJSON(json);
       // $* stores with empty states [], not ['*']
       expect(tree.get('button.color', [])).toBe('black');
-      expect(tree.get('button.fontSize', [])).toBe(14);
+      expect(tree.get('button.font.size', [])).toBe(14);
       expect(tree.get('button.color', ['hover'])).toBe('blue');
     });
 
@@ -119,4 +121,3 @@ describe('digest', () => {
     });
   });
 });
-

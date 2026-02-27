@@ -1,5 +1,5 @@
 import {TickerForest} from "@wonderlandlabs-pixi-ux/ticker-forest";
-import type {PartialWindowStyle, RgbColor, WindowDef, WindowStyle} from "./types";
+import type {PartialWindowStyle, RgbColor, WindowCloseHandler, WindowDef, WindowStyle} from "./types";
 import {Application, Container, Graphics, Rectangle} from "pixi.js";
 import {WindowsManager} from "./WindowsManager";
 import rgbToColor from "./rgbToColor";
@@ -62,6 +62,7 @@ export class WindowStore extends TickerForest<WindowDef> {
         }, this.application!) as unknown as TitlebarStore;
         this.#titlebarStore.application = this.application;
         this.#titlebarStore.set('isDirty', true);
+        this.#syncTitlebarCloseState();
 
         this.#sizeSubscription?.unsubscribe();
         this.#sizeSubscription = this.$subject.pipe(
@@ -97,12 +98,53 @@ export class WindowStore extends TickerForest<WindowDef> {
     #resizerStore?: ResizerStore;
     #dragInitialized = false;
     #sizeSubscription?: Subscription;
+    #closable = false;
+    #onClose?: WindowCloseHandler;
 
     /**
      * Get the titlebar store for custom configuration
      */
     get titlebarStore(): TitlebarStore | undefined {
         return this.#titlebarStore;
+    }
+
+    get closable(): boolean {
+        return this.#closable;
+    }
+
+    setClosable(closable: boolean): void {
+        if (this.#closable === closable) {
+            return;
+        }
+        this.#closable = closable;
+        this.#syncTitlebarCloseState();
+    }
+
+    setOnClose(onClose?: WindowCloseHandler): void {
+        this.#onClose = onClose;
+    }
+
+    requestClose(): void {
+        const rootStore = this.$root as unknown as WindowsManager | undefined;
+        const shouldKeepOpen = this.#onClose?.({
+            id: this.value.id,
+            windowStore: this,
+            windowsManager: rootStore,
+        }) === false;
+
+        if (!shouldKeepOpen) {
+            rootStore?.removeWindow?.(this.value.id);
+        }
+    }
+
+    #syncTitlebarCloseState(): void {
+        const showCloseButton = this.#closable || !!this.value.titlebar?.showCloseButton;
+        if (!this.#titlebarStore || this.#titlebarStore.value.showCloseButton === showCloseButton) {
+            return;
+        }
+        this.#titlebarStore.set('showCloseButton', showCloseButton);
+        this.#titlebarStore.set('isDirty', true);
+        this.#titlebarStore.queueResolve();
     }
 
     #refreshRoot() {
@@ -393,6 +435,7 @@ export class WindowStore extends TickerForest<WindowDef> {
     #tbKicked = false;
 
     #refreshTitlebar() {
+        this.#syncTitlebarCloseState();
         if (!this.#tbKicked) {
             this.#titlebarStore?.kickoff();
             this.#tbKicked = true;
@@ -521,6 +564,7 @@ export class WindowStore extends TickerForest<WindowDef> {
 
         this.#sizeSubscription?.unsubscribe();
         this.#sizeSubscription = undefined;
+        this.#onClose = undefined;
 
         // Cleanup drag store
         if (this.#dragStore) {

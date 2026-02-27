@@ -12,6 +12,28 @@ export const RgbColorSchema = z.object({
 
 export type RgbColor = z.infer<typeof RgbColorSchema>;
 
+export const WindowLabelFontStyleSchema = z.object({
+    size: z.number().min(0).default(10),
+    family: z.string().default('Helvetica'),
+    color: RgbColorSchema.default({r: 0, g: 0, b: 0}),
+    alpha: z.number().min(0).max(1).default(1),
+    visible: z.boolean().default(true),
+});
+
+export type WindowLabelFontStyle = z.infer<typeof WindowLabelFontStyleSchema>;
+
+export const WindowLabelStyleSchema = z.object({
+    font: WindowLabelFontStyleSchema.default({
+        size: 10,
+        family: 'Helvetica',
+        color: {r: 0, g: 0, b: 0},
+        alpha: 1,
+        visible: true,
+    }),
+});
+
+export type WindowLabelStyle = z.infer<typeof WindowLabelStyleSchema>;
+
 // Window style schema - defines all styleable properties
 export const WindowStyleSchema = z.object({
     // Window background
@@ -20,6 +42,15 @@ export const WindowStyleSchema = z.object({
     // Titlebar colors
     titlebarBackgroundColor: RgbColorSchema,
     titlebarTextColor: RgbColorSchema,
+    label: WindowLabelStyleSchema.default({
+        font: {
+            size: 10,
+            family: 'Helvetica',
+            color: {r: 0, g: 0, b: 0},
+            alpha: 1,
+            visible: true,
+        },
+    }),
 
     // Border colors
     borderColor: RgbColorSchema.optional(),
@@ -37,7 +68,11 @@ export const WindowStyleSchema = z.object({
 export type WindowStyle = z.infer<typeof WindowStyleSchema>;
 
 // Partial style for user overrides
-export type PartialWindowStyle = Partial<WindowStyle>;
+export type PartialWindowStyle = Omit<Partial<WindowStyle>, 'label'> & {
+    label?: {
+        font?: Partial<WindowLabelFontStyle>;
+    };
+};
 
 export const LoadStateSchema = z.enum([LOAD_STATUS.START, LOAD_STATUS.LOADED, LOAD_STATUS.ERROR]);
 
@@ -141,6 +176,14 @@ export const WindowDefSchema = z.object({
 
 export type WindowDef = z.infer<typeof WindowDefSchema>;
 
+export type WindowCloseContext = {
+    id: string;
+    windowStore: unknown;
+    windowsManager?: unknown;
+};
+
+export type WindowCloseHandler = (context: WindowCloseContext) => boolean | void;
+
 // Type for WindowStore class constructor
 export type WindowStoreClass<T extends WindowDef = WindowDef> = new (
     config: any,
@@ -151,6 +194,8 @@ export type WindowStoreClass<T extends WindowDef = WindowDef> = new (
 export type WindowDefInput = Omit<Partial<WindowDef>, 'titlebar'> & {
     id: string;
     titlebar?: Partial<TitlebarConfig>;
+    closable?: boolean;
+    onClose?: WindowCloseHandler;
     customStyle?: PartialWindowStyle; // User style overrides
     storeClass?: WindowStoreClass; // Custom WindowStore subclass
 };

@@ -29,12 +29,14 @@ const style = fromJSON({
   button: {
     text: {
       padding: { $*: { x: 12, y: 6 } },
-      borderRadius: { $*: 6 },
+      'border.radius': { $*: 6 },
       fill: { $*: { color: { r: 0.2, g: 0.45, b: 0.7 }, alpha: 1 } },
       label: {
-        fontSize: { $*: 13 },
-        color: { $*: { r: 1, g: 1, b: 1 } },
-        alpha: { $*: 1 }
+        font: {
+          size: { $*: 13 },
+          color: { $*: { r: 1, g: 1, b: 1 } },
+          alpha: { $*: 1 }
+        }
       }
     }
   }

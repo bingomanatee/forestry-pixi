@@ -29,16 +29,18 @@ const styleTree = fromJSON({
   button: {
     inline: {
       padding: { $*: { x: 12, y: 6 } },
-      borderRadius: { $*: 6 },
-      iconGap: { $*: 8 },
+      'border.radius': { $*: 6 },
+      'icon.gap': { $*: 8 },
       fill: {
         $*: { color: { r: 0.2, g: 0.55, b: 0.85 }, alpha: 1 },
         $hover: { color: { r: 0.25, g: 0.62, b: 0.9 }, alpha: 1 }
       },
       label: {
-        fontSize: { $*: 14 },
-        color: { $*: { r: 1, g: 1, b: 1 } },
-        alpha: { $*: 1 }
+        font: {
+          size: { $*: 14 },
+          color: { $*: { r: 1, g: 1, b: 1 } },
+          alpha: { $*: 1 }
+        }
       }
     }
   }
@@ -90,12 +92,12 @@ State keys are read using noun paths under `button` and optional states (`hover`
 
 Common keys:
 - `button.padding.x`, `button.padding.y`
-- `button.borderRadius`
+- `button.border.radius`
 - `button.fill.color`, `button.fill.alpha`
-- `button.stroke.color`, `button.stroke.width`, `button.stroke.alpha`
-- `button.label.fontSize`, `button.label.color`, `button.label.alpha`
+- `button.stroke.color`, `button.stroke.size`, `button.stroke.alpha`
+- `button.label.font.size`, `button.label.font.color`, `button.label.font.alpha`
 - `button.icon.size.x`, `button.icon.size.y`, `button.icon.alpha`
-- Mode-specific variants: `button.inline.*`, `button.text.*`, `button.iconVertical.*`
+- Mode-specific variants: `button.inline.*`, `button.text.*`, `button.icon.vertical.*`
 
 Variant lookup inserts `variant` after `button` (for example `button.primary.inline.fill.color`).
 

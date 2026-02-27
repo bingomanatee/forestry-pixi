@@ -36,6 +36,29 @@ describe('StyleTree', () => {
       tree.set('button.text', ['active'], 'red');
       expect(tree.size).toBe(2);
     });
+
+    it('should normalize interCaps noun keys by default', () => {
+      tree.set('button.label.fontSize', [], 13);
+      expect(tree.get('button.label.font.size', [])).toBe(13);
+      expect(tree.get('button.label.fontSize', [])).toBe(13);
+    });
+
+    it('should split single interCaps segments into deep noun paths', () => {
+      tree.set('windowLabelFontSize', [], 10);
+      expect(tree.get('window.label.font.size', [])).toBe(10);
+      expect(tree.match({ nouns: ['windowLabelFontSize'], states: [] })).toBe(10);
+    });
+
+    it('should normalize interCaps nouns for matching queries', () => {
+      tree.set('button.iconGap', [], 8);
+
+      const result = tree.match({
+        nouns: ['button', 'iconGap'],
+        states: [],
+      });
+
+      expect(result).toBe(8);
+    });
   });
 
   describe('Exact matching', () => {
@@ -443,6 +466,14 @@ describe('StyleTree', () => {
       nonSortingTree.set('button', ['z', 'a', 'm'], 'value');
       expect(nonSortingTree.get('button', ['z', 'a', 'm'])).toBe('value');
       expect(nonSortingTree.get('button', ['a', 'm', 'z'])).toBeUndefined();
+    });
+
+    it('should preserve interCaps keys when normalizeInterCaps is false', () => {
+      const legacyTree = new StyleTree({ normalizeInterCaps: false });
+      legacyTree.set('button.fontSize', [], 12);
+
+      expect(legacyTree.get('button.fontSize', [])).toBe(12);
+      expect(legacyTree.get('button.font.size', [])).toBeUndefined();
     });
   });
 });
