@@ -1,1 +1,1 @@
-export { TickerForest, type TickerForestConfig } from './TickerForest';
+export { TickerForest, type TickerForestConfig } from './TickerForest.js';

@@ -1,12 +1,12 @@
-export { createRootContainer } from './RootContainer';
-export type { RootContainerResult } from './RootContainer';
+export { createRootContainer } from './RootContainer.js';
+export type { RootContainerResult } from './RootContainer.js';
 
-export { createZoomPan } from './ZoomPanContainer';
-export type { ZoomPanResult } from './ZoomPanContainer';
+export { createZoomPan } from './ZoomPanContainer.js';
+export type { ZoomPanResult } from './ZoomPanContainer.js';
 
-export { makeStageDraggable } from './makeStageDraggable';
-export type { StageDraggableResult, StageDragEvent } from './makeStageDraggable';
+export { makeStageDraggable } from './makeStageDraggable.js';
+export type { StageDraggableResult, StageDragEvent } from './makeStageDraggable.js';
 
-export { makeStageZoomable } from './makeStageZoomable';
-export type { StageZoomableResult, StageZoomEvent, ZoomOptions } from './makeStageZoomable';
+export { makeStageZoomable } from './makeStageZoomable.js';
+export type { StageZoomableResult, StageZoomEvent, ZoomOptions } from './makeStageZoomable.js';
 

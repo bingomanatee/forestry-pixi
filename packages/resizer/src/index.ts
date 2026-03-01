@@ -1,23 +1,23 @@
-export { enableHandles } from './enableHandles';
-export { trackDrag } from './trackDrag';
-export { ResizerStore } from './ResizerStore';
-export type { Rect } from './rectTypes';
-export { RectSchema } from './rectTypes';
+export { enableHandles } from './enableHandles.js';
+export { trackDrag } from './trackDrag.js';
+export { ResizerStore } from './ResizerStore.js';
+export type { Rect } from './rectTypes.js';
+export { RectSchema } from './rectTypes.js';
 
 export {
   ColorSchema,
   HandlePosition,
-} from './types';
+} from './types.js';
 
 export type {
   Color,
   HandleMode,
-} from './types';
+} from './types.js';
 
 export type {
   TrackDragCallbacks,
   TrackDragResult,
-} from './trackDrag';
+} from './trackDrag.js';
 
-export type { EnableHandlesConfig } from "./enableHandlesConfig";
+export type { EnableHandlesConfig } from "./enableHandlesConfig.js";
 

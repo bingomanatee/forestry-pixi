@@ -1,5 +1,5 @@
-export { GridManager } from './GridManager';
-export type { GridManagerConfig } from './GridManager';
+export { GridManager } from './GridManager.js';
+export type { GridManagerConfig, GridCacheOptions, GridCacheDebugOptions, GridCacheDebugInfo } from './GridManager.js';
 export type {
   GridLineOptions,
   GridLineConfig,
@@ -10,5 +10,4 @@ export type {
   GridStoreValue,
   GridStoreSchema,
   GridManagerValue,
-} from './types';
-
+} from './types.js';

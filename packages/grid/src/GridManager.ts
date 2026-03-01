@@ -1,28 +1,81 @@
 import { TickerForest } from '@wonderlandlabs-pixi-ux/ticker-forest';
-import { Container, Graphics, TilingSprite, Texture } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import type { Application } from 'pixi.js';
 import type { GridStoreValue, GridManagerValue } from './types';
+
+export interface GridCacheOptions {
+  enabled?: boolean;
+  resolution?: number;
+  antialias?: boolean;
+  debug?: boolean | GridCacheDebugOptions;
+}
+
+export interface GridCacheDebugInfo {
+  reason: GridRedrawReason;
+  zoom: number;
+  baseResolution: number;
+  activeResolution: number;
+  textureWidthPx: number;
+  textureHeightPx: number;
+  pixelCount: number;
+  measuredBytes: number | null;
+  measuredBytesMethod: 'resource-byteLength' | 'resource-data-byteLength' | 'unavailable';
+  estimatedBytes: number;
+  estimatedMiB: number;
+}
+
+export interface GridCacheDebugOptions {
+  logger?: (info: GridCacheDebugInfo) => void;
+  logIntervalMs?: number;
+}
 
 export interface GridManagerConfig {
   gridSpec: GridStoreValue;
   application: Application;
   zoomPanContainer: Container;
+  cache?: GridCacheOptions;
 }
 
+interface WorldBounds {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+type GridRedrawReason = 'zoom' | 'drag' | 'resize' | 'spec-update' | 'init' | 'unknown';
+
 /**
- * Forestry-based grid manager that listens to zoom/pan events
- * and efficiently redraws the grid using the TickerForest pattern.
- * Uses lazy getters for container, sprites, and textures.
+ * Grid manager that redraws visible lines directly into Graphics objects.
+ * This avoids tiled texture seam artifacts and keeps behavior deterministic.
  */
 export class GridManager extends TickerForest<GridManagerValue> {
   #zoomPanContainer: Container;
   #_gridContainer?: Container;
-  #_gridTexture?: Texture;
-  #_gridSprite?: TilingSprite;
-  #_gridMajorTexture?: Texture;
-  #_gridMajorSprite?: TilingSprite;
+  #_gridMinor?: Graphics;
+  #_gridMajor?: Graphics;
   #_artboard?: Graphics;
-  #currentZoom: number = 1;
+  #cacheEnabled: boolean;
+  #cacheBaseResolution: number;
+  #cacheActiveResolution: number;
+  #cacheAntialias: boolean;
+  #cacheDebugEnabled: boolean;
+  #cacheDebugLogger?: (info: GridCacheDebugInfo) => void;
+  #cacheDebugIntervalMs: number;
+  #lastCacheDebugAtMs: number = Number.NEGATIVE_INFINITY;
+  #lastRedrawReason: GridRedrawReason = 'init';
+
+  #onStageZoom = (): void => {
+    this.#invalidate('zoom');
+  };
+
+  #onStageDrag = (): void => {
+    this.#invalidate('drag');
+  };
+
+  #onRendererResize = (): void => {
+    this.#invalidate('resize');
+  };
 
   constructor(config: GridManagerConfig) {
     super(
@@ -35,358 +88,355 @@ export class GridManager extends TickerForest<GridManagerValue> {
       { app: config.application, container: config.zoomPanContainer }
     );
 
-    // Store PixiJS references as private properties (not in Forestry state)
     this.#zoomPanContainer = config.zoomPanContainer;
-
+    this.#cacheEnabled = config.cache?.enabled ?? true;
+    this.#cacheBaseResolution = Math.max(Number.EPSILON, config.cache?.resolution ?? 2);
+    this.#cacheActiveResolution = this.#cacheBaseResolution;
+    this.#cacheAntialias = config.cache?.antialias ?? true;
+    this.#cacheDebugEnabled = Boolean(config.cache?.debug);
+    this.#cacheDebugLogger =
+      typeof config.cache?.debug === 'object' && config.cache?.debug?.logger
+        ? config.cache.debug.logger
+        : undefined;
+    this.#cacheDebugIntervalMs =
+      typeof config.cache?.debug === 'object'
+        ? Math.max(0, config.cache.debug.logIntervalMs ?? 250)
+        : 250;
     this.#initialize();
   }
 
-  /**
-   * TickerForest abstract method - check if dirty
-   */
   protected isDirty(): boolean {
     return this.value.dirty;
   }
 
-  /**
-   * TickerForest abstract method - clear dirty flag
-   */
   protected clearDirty(): void {
     this.mutate(draft => {
       draft.dirty = false;
     });
   }
 
-  /**
-   * TickerForest abstract method - mark as dirty
-   */
   protected markDirty(): void {
     this.mutate(draft => {
       draft.dirty = true;
     });
   }
 
-  /**
-   * TickerForest abstract method - resolve (redraw grid)
-   */
   protected resolve(): void {
     this.#redrawGrid();
+    this.clearDirty();
   }
 
-  /**
-   * Lazy getter for grid container
-   */
   get #gridContainer(): Container {
     if (!this.#_gridContainer) {
-      this.#_gridContainer = this.#createGridContainer();
+      const container = new Container();
+      container.label = 'GridContainer';
+      this.#zoomPanContainer.addChildAt(container, 0);
+      if (this.#cacheEnabled) {
+        container.cacheAsTexture({
+          resolution: this.#cacheActiveResolution,
+          antialias: this.#cacheAntialias,
+        });
+      }
+      this.#_gridContainer = container;
     }
     return this.#_gridContainer;
   }
 
-  /**
-   * Lazy getter for grid texture
-   */
-  get #gridTexture(): Texture {
-    if (!this.#_gridTexture) {
-      const { gridSpec } = this.value;
-      this.#_gridTexture = this.#createGridTexture(
-        400,
-        gridSpec.grid.x,
-        gridSpec.grid.y,
-        gridSpec.grid.color,
-        gridSpec.grid.alpha
-      );
+  get #minorGraphics(): Graphics {
+    if (!this.#_gridMinor) {
+      const graphics = new Graphics();
+      graphics.label = 'GridMinor';
+      this.#gridContainer.addChild(graphics);
+      this.#_gridMinor = graphics;
     }
-    return this.#_gridTexture;
+    return this.#_gridMinor;
   }
 
-  /**
-   * Lazy getter for grid sprite
-   */
-  get #gridSprite(): TilingSprite {
-    if (!this.#_gridSprite) {
-      this.#_gridSprite = this.#createGridSprite();
+  get #majorGraphics(): Graphics {
+    if (!this.#_gridMajor) {
+      const graphics = new Graphics();
+      graphics.label = 'GridMajor';
+      this.#gridContainer.addChild(graphics);
+      this.#_gridMajor = graphics;
     }
-    return this.#_gridSprite;
+    return this.#_gridMajor;
   }
 
-  /**
-   * Lazy getter for major grid texture
-   */
-  get #gridMajorTexture(): Texture | undefined {
-    const { gridSpec } = this.value;
-    if (!gridSpec.gridMajor) return undefined;
-
-    if (!this.#_gridMajorTexture) {
-      this.#_gridMajorTexture = this.#createGridMajorTexture();
-    }
-    return this.#_gridMajorTexture;
-  }
-
-  /**
-   * Lazy getter for major grid sprite
-   */
-  get #gridMajorSprite(): TilingSprite | undefined {
-    const { gridSpec } = this.value;
-    if (!gridSpec.gridMajor) return undefined;
-
-    if (!this.#_gridMajorSprite && this.#gridMajorTexture) {
-      this.#_gridMajorSprite = this.#createGridMajorSprite();
-    }
-    return this.#_gridMajorSprite;
-  }
-
-  /**
-   * Lazy getter for artboard
-   */
-  get #artboard(): Graphics | undefined {
-    const { gridSpec } = this.value;
-    if (!gridSpec.artboard) return undefined;
-
+  get #artboardGraphics(): Graphics {
     if (!this.#_artboard) {
-      this.#_artboard = this.#createArtboard();
+      const graphics = new Graphics();
+      graphics.label = 'Artboard';
+      this.#gridContainer.addChild(graphics);
+      this.#_artboard = graphics;
     }
     return this.#_artboard;
   }
 
-  /**
-   * Create grid container
-   */
-  #createGridContainer(): Container {
-    const container = new Container();
-    container.label = 'GridContainer';
-
-    // Add to zoom/pan container at bottom
-    this.#zoomPanContainer.addChildAt(container, 0);
-
-    return container;
-  }
-
-  /**
-   * Create grid sprite
-   */
-  #createGridSprite(): TilingSprite {
-    const sprite = new TilingSprite({
-      texture: this.#gridTexture,
-      width: 10000,
-      height: 10000,
-    });
-    sprite.anchor.set(0.5);
-    sprite.label = 'GridSprite';
-    this.#gridContainer!.addChild(sprite);
-
-    return sprite;
-  }
-
-  /**
-   * Create major grid texture
-   */
-  #createGridMajorTexture(): Texture {
-    const { gridSpec } = this.value;
-    if (!gridSpec.gridMajor) throw new Error('gridMajor not defined');
-
-    return this.#createGridTexture(
-      400,
-      gridSpec.gridMajor.x,
-      gridSpec.gridMajor.y,
-      gridSpec.gridMajor.color,
-      gridSpec.gridMajor.alpha
-    );
-  }
-
-  /**
-   * Create major grid sprite
-   */
-  #createGridMajorSprite(): TilingSprite {
-    if (!this.#gridMajorTexture) throw new Error('gridMajorTexture not available');
-
-    const sprite = new TilingSprite({
-      texture: this.#gridMajorTexture,
-      width: 10000,
-      height: 10000,
-    });
-    sprite.anchor.set(0.5);
-    sprite.label = 'GridMajorSprite';
-    this.#gridContainer.addChild(sprite);
-
-    return sprite;
-  }
-
-  /**
-   * Create artboard
-   */
-  #createArtboard(): Graphics {
-    const { gridSpec } = this.value;
-    if (!gridSpec.artboard) throw new Error('artboard not defined');
-
-    const { x, y, width, height, color, alpha } = gridSpec.artboard;
-    const artboard = new Graphics();
-    artboard.rect(x, y, width, height);
-    artboard.stroke({ color, width: 1, alpha });
-    artboard.label = 'Artboard';
-    this.#gridContainer.addChild(artboard);
-
-    return artboard;
-  }
-
-  /**
-   * Initialize the grid and set up event listeners
-   */
   #initialize(): void {
-    // Trigger lazy creation of container and sprites
     this.#gridContainer;
-    this.#gridSprite;
-    this.#gridMajorSprite;
-    this.#artboard;
+    this.#minorGraphics;
+    if (this.value.gridSpec.gridMajor) {
+      this.#majorGraphics;
+    }
+    if (this.value.gridSpec.artboard) {
+      this.#artboardGraphics;
+    }
 
-    // Listen to stage zoom events - mark dirty
-    this.application?.stage.on('stage-zoom', () => {
-      this.markDirty();
-      this.queueResolve();
-    });
+    this.application?.stage.on('stage-zoom', this.#onStageZoom);
+    this.application?.stage.on('stage-drag', this.#onStageDrag);
+    this.application?.renderer.on('resize', this.#onRendererResize);
 
-    // Listen to stage drag events - mark dirty
-    this.application?.stage.on('stage-drag', () => {
-      this.markDirty();
-      this.queueResolve();
-    });
-
-    // Initial draw
-    this.markDirty();
+    this.#invalidate('init');
     this.kickoff();
   }
 
-  /**
-   * Ticker handler - recreates textures if dirty
-   */
-  #onTick = (): void => {
-    if (this.value.dirty) {
-      this.#redrawGrid();
-      this.mutate(draft => {
-        draft.dirty = false;
-      });
-    }
-  };
+  #invalidate(reason: GridRedrawReason): void {
+    this.#lastRedrawReason = reason;
+    this.markDirty();
+    this.queueResolve();
+  }
 
-  /**
-   * Create a grid texture with lines using canvas
-   */
-  #createGridTexture(
-    size: number,
+  #applyDensityFloor(spacingX: number, spacingY: number, zoom: number): { x: number; y: number } {
+    let multiplier = 1;
+    while (spacingX * zoom * multiplier < 16 || spacingY * zoom * multiplier < 16) {
+      multiplier *= 2;
+    }
+
+    return {
+      x: spacingX * multiplier,
+      y: spacingY * multiplier,
+    };
+  }
+
+  #resolveMinorSpacing(zoom: number): { x: number; y: number } {
+    const { gridSpec } = this.value;
+    let spacingX = gridSpec.grid.x;
+    let spacingY = gridSpec.grid.y;
+
+    const isMinorTooDense = spacingX * zoom < 16 || spacingY * zoom < 16;
+    if (isMinorTooDense && gridSpec.gridMajor) {
+      // Use half-major spacing so minor lines remain visible between major lines
+      // instead of landing on top of them.
+      spacingX = Math.max(1, gridSpec.gridMajor.x / 2);
+      spacingY = Math.max(1, gridSpec.gridMajor.y / 2);
+    }
+
+    return this.#applyDensityFloor(spacingX, spacingY, zoom);
+  }
+
+  #resolveMajorSpacing(zoom: number): { x: number; y: number } | undefined {
+    const { gridSpec } = this.value;
+    if (!gridSpec.gridMajor) {
+      return undefined;
+    }
+
+    return this.#applyDensityFloor(gridSpec.gridMajor.x, gridSpec.gridMajor.y, zoom);
+  }
+
+  #worldBounds(spacingX: number, spacingY: number): WorldBounds {
+    const screen = this.application?.screen;
+    if (!screen) {
+      return { left: -2000, right: 2000, top: -2000, bottom: 2000 };
+    }
+
+    const rawScaleX = this.#zoomPanContainer.scale.x;
+    const rawScaleY = this.#zoomPanContainer.scale.y;
+    const safeScaleX = Math.abs(rawScaleX) < 0.0001 ? 0.0001 : rawScaleX;
+    const safeScaleY = Math.abs(rawScaleY) < 0.0001 ? 0.0001 : rawScaleY;
+
+    const pos = this.#zoomPanContainer.position;
+    const rawLeft = (0 - pos.x) / safeScaleX;
+    const rawRight = (screen.width - pos.x) / safeScaleX;
+    const rawTop = (0 - pos.y) / safeScaleY;
+    const rawBottom = (screen.height - pos.y) / safeScaleY;
+
+    const left = Math.min(rawLeft, rawRight);
+    const right = Math.max(rawLeft, rawRight);
+    const top = Math.min(rawTop, rawBottom);
+    const bottom = Math.max(rawTop, rawBottom);
+
+    const padX = Math.max(spacingX * 2, 48 / Math.abs(safeScaleX));
+    const padY = Math.max(spacingY * 2, 48 / Math.abs(safeScaleY));
+
+    return {
+      left: left - padX,
+      right: right + padX,
+      top: top - padY,
+      bottom: bottom + padY,
+    };
+  }
+
+  #drawGridLines(
+    graphics: Graphics,
     spacingX: number,
     spacingY: number,
     color: number,
     alpha: number,
-    lineWidth: number = 1
-  ): Texture {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d')!;
-
-    // Convert hex color to rgba
-    const r = (color >> 16) & 0xFF;
-    const g = (color >> 8) & 0xFF;
-    const b = color & 0xFF;
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    ctx.lineWidth = lineWidth;
-
-    // Draw vertical lines
-    for (let x = 0; x <= size; x += spacingX) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, size);
-      ctx.stroke();
+    lineWidth: number
+  ): void {
+    graphics.clear();
+    if (spacingX <= 0 || spacingY <= 0) {
+      return;
     }
 
-    // Draw horizontal lines
-    for (let y = 0; y <= size; y += spacingY) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(size, y);
-      ctx.stroke();
+    const bounds = this.#worldBounds(spacingX, spacingY);
+    const startX = Math.floor(bounds.left / spacingX) * spacingX;
+    const endX = Math.ceil(bounds.right / spacingX) * spacingX;
+    const startY = Math.floor(bounds.top / spacingY) * spacingY;
+    const endY = Math.ceil(bounds.bottom / spacingY) * spacingY;
+
+    let segmentCount = 0;
+    const maxSegments = 12000;
+
+    for (let x = startX; x <= endX && segmentCount < maxSegments; x += spacingX) {
+      graphics.moveTo(x, bounds.top);
+      graphics.lineTo(x, bounds.bottom);
+      segmentCount += 1;
     }
 
-    return Texture.from(canvas);
+    for (let y = startY; y <= endY && segmentCount < maxSegments; y += spacingY) {
+      graphics.moveTo(bounds.left, y);
+      graphics.lineTo(bounds.right, y);
+      segmentCount += 1;
+    }
+
+    if (segmentCount > 0) {
+      graphics.stroke({ color, width: lineWidth, alpha });
+    }
   }
 
-  /**
-   * Redraw grid - recreate textures with adjusted line thickness
-   */
+  #resolveCacheResolution(zoom: number): number {
+    // Fully dynamic: scale cache resolution directly with zoom level.
+    return Math.max(Number.EPSILON, this.#cacheBaseResolution * zoom);
+  }
+
+  #syncCacheResolution(zoom: number): void {
+    if (!this.#cacheEnabled || !this.#_gridContainer) {
+      return;
+    }
+
+    const nextResolution = this.#resolveCacheResolution(zoom);
+    if (nextResolution === this.#cacheActiveResolution) {
+      return;
+    }
+
+    this.#cacheActiveResolution = nextResolution;
+    this.#_gridContainer.cacheAsTexture({
+      resolution: this.#cacheActiveResolution,
+      antialias: this.#cacheAntialias,
+    });
+  }
+
+  #emitCacheDebug(zoom: number): void {
+    if (!this.#cacheDebugEnabled || !this.#cacheEnabled || !this.#_gridContainer) {
+      return;
+    }
+
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - this.#lastCacheDebugAtMs < this.#cacheDebugIntervalMs) {
+      return;
+    }
+    this.#lastCacheDebugAtMs = now;
+
+    const source = this.#_gridContainer.renderGroup?.texture?.source;
+    const textureWidthPx = source?.pixelWidth ?? 0;
+    const textureHeightPx = source?.pixelHeight ?? 0;
+    const pixelCount = textureWidthPx * textureHeightPx;
+    const estimatedBytes = pixelCount * 4;
+    const estimatedMiB = estimatedBytes / (1024 * 1024);
+    const resource = source?.resource as { byteLength?: number; data?: { byteLength?: number } } | undefined;
+    let measuredBytes: number | null = null;
+    let measuredBytesMethod: GridCacheDebugInfo['measuredBytesMethod'] = 'unavailable';
+    if (typeof resource?.byteLength === 'number') {
+      measuredBytes = resource.byteLength;
+      measuredBytesMethod = 'resource-byteLength';
+    } else if (typeof resource?.data?.byteLength === 'number') {
+      measuredBytes = resource.data.byteLength;
+      measuredBytesMethod = 'resource-data-byteLength';
+    }
+
+    const info: GridCacheDebugInfo = {
+      reason: this.#lastRedrawReason,
+      zoom,
+      baseResolution: this.#cacheBaseResolution,
+      activeResolution: this.#cacheActiveResolution,
+      textureWidthPx,
+      textureHeightPx,
+      pixelCount,
+      measuredBytes,
+      measuredBytesMethod,
+      estimatedBytes,
+      estimatedMiB,
+    };
+
+    if (this.#cacheDebugLogger) {
+      this.#cacheDebugLogger(info);
+      return;
+    }
+
+    const baseMessage = `[GridCacheDebug] reason=${info.reason} zoom=${info.zoom.toFixed(2)} res=${info.activeResolution.toFixed(2)} texture=${info.textureWidthPx}x${info.textureHeightPx} pixels=${info.pixelCount} estMiB=${info.estimatedMiB.toFixed(2)}`;
+    if (info.measuredBytes !== null) {
+      // eslint-disable-next-line no-console
+      console.info(`${baseMessage} measuredBytes=${info.measuredBytes} method=${info.measuredBytesMethod}`);
+      return;
+    }
+
+    // eslint-disable-next-line no-console
+    console.info(baseMessage);
+  }
+
   #redrawGrid(): void {
     const { gridSpec } = this.value;
-    const zoom = this.#zoomPanContainer.scale.x;
-
-    // Calculate line width to maintain 1px visual thickness
-    // When zoomed in (zoom > 1), lines need to be thinner in world space
-    // When zoomed out (zoom < 1), lines need to be thicker in world space
+    const zoom = Math.max(Math.abs(this.#zoomPanContainer.scale.x), 0.0001);
     const lineWidth = 1 / zoom;
 
-    // Calculate what the visual spacing would be in screen pixels
-    let visualSpacingX = gridSpec.grid.x * zoom;
-    let visualSpacingY = gridSpec.grid.y * zoom;
-
-    // If visual spacing < 16px, double the spacing to avoid overly dense gridlines
-    let multiplier = 1;
-    while (visualSpacingX * multiplier < 16 || visualSpacingY * multiplier < 16) {
-      multiplier *= 2;
-    }
-
-    // Recreate grid texture with adjusted line width and multiplied spacing
-    if (this.#_gridTexture) {
-      this.#_gridTexture.destroy();
-    }
-    this.#_gridTexture = this.#createGridTexture(
-      400,
-      gridSpec.grid.x * multiplier,
-      gridSpec.grid.y * multiplier,
+    const minorSpacing = this.#resolveMinorSpacing(zoom);
+    this.#drawGridLines(
+      this.#minorGraphics,
+      minorSpacing.x,
+      minorSpacing.y,
       gridSpec.grid.color,
       gridSpec.grid.alpha,
       lineWidth
     );
 
-    // No scaling needed - texture is in world coordinates
-    if (this.#_gridSprite) {
-      this.#_gridSprite.texture = this.#_gridTexture;
-      this.#_gridSprite.scale.set(1);
-    }
-
-    // Update major grid if it exists
-    if (gridSpec.gridMajor && this.#_gridMajorSprite) {
-      let majorVisualSpacingX = gridSpec.gridMajor.x * zoom;
-      let majorVisualSpacingY = gridSpec.gridMajor.y * zoom;
-
-      let majorMultiplier = 1;
-      while (majorVisualSpacingX * majorMultiplier < 16 || majorVisualSpacingY * majorMultiplier < 16) {
-        majorMultiplier *= 2;
-      }
-
-      // Recreate major grid texture with adjusted line width and multiplied spacing
-      if (this.#_gridMajorTexture) {
-        this.#_gridMajorTexture.destroy();
-      }
-      this.#_gridMajorTexture = this.#createGridTexture(
-        400,
-        gridSpec.gridMajor.x * majorMultiplier,
-        gridSpec.gridMajor.y * majorMultiplier,
+    const majorSpacing = this.#resolveMajorSpacing(zoom);
+    if (majorSpacing && gridSpec.gridMajor) {
+      this.#drawGridLines(
+        this.#majorGraphics,
+        majorSpacing.x,
+        majorSpacing.y,
         gridSpec.gridMajor.color,
         gridSpec.gridMajor.alpha,
         lineWidth
       );
-
-      // No scaling needed
-      this.#_gridMajorSprite.texture = this.#_gridMajorTexture;
-      this.#_gridMajorSprite.scale.set(1);
+    } else if (this.#_gridMajor) {
+      this.#_gridMajor.clear();
     }
 
-    this.#currentZoom = zoom;
+    if (gridSpec.artboard) {
+      const { x, y, width, height, color, alpha } = gridSpec.artboard;
+      const artboard = this.#artboardGraphics;
+      artboard.clear();
+      artboard.rect(x, y, width, height);
+      artboard.stroke({ color, width: lineWidth, alpha });
+    } else if (this.#_artboard) {
+      this.#_artboard.clear();
+    }
+
+    if (this.#cacheEnabled && this.#_gridContainer) {
+      this.#syncCacheResolution(zoom);
+      this.#_gridContainer.updateCacheTexture();
+      if (this.#lastRedrawReason === 'zoom') {
+        this.#emitCacheDebug(zoom);
+      }
+    }
+
+    this.#lastRedrawReason = 'unknown';
   }
 
-  /**
-   * Update the grid specification
-   */
   updateGridSpec(gridSpec: Partial<GridStoreValue>): void {
-    this.mutate((draft) => {
+    this.mutate(draft => {
       if (gridSpec.grid) {
         draft.gridSpec.grid = { ...draft.gridSpec.grid, ...gridSpec.grid };
       }
@@ -399,47 +449,26 @@ export class GridManager extends TickerForest<GridManagerValue> {
       draft.dirty = true;
     });
 
-    // Clear cached resources to force recreation
-    if (this.#_gridTexture) {
-      this.#_gridTexture.destroy();
-      this.#_gridTexture = undefined;
-    }
-    if (this.#_gridMajorTexture) {
-      this.#_gridMajorTexture.destroy();
-      this.#_gridMajorTexture = undefined;
-    }
-    if (this.#_artboard) {
-      this.#_artboard.destroy();
-      this.#_artboard = undefined;
-    }
+    this.#invalidate('spec-update');
   }
 
-  /**
-   * Clean up resources
-   */
   cleanup(): void {
-    // Call parent cleanup to remove ticker listener
     super.cleanup();
 
-    // Remove event listeners
-    this.application?.stage.off('stage-zoom');
-    this.application?.stage.off('stage-drag');
+    this.application?.stage.off('stage-zoom', this.#onStageZoom);
+    this.application?.stage.off('stage-drag', this.#onStageDrag);
+    this.application?.renderer.off('resize', this.#onRendererResize);
 
-    // Destroy textures
-    if (this.#_gridTexture) {
-      this.#_gridTexture.destroy();
-      this.#_gridTexture = undefined;
-    }
-    if (this.#_gridMajorTexture) {
-      this.#_gridMajorTexture.destroy();
-      this.#_gridMajorTexture = undefined;
-    }
-
-    // Remove and destroy container
     if (this.#_gridContainer) {
+      if (this.#cacheEnabled) {
+        this.#_gridContainer.cacheAsTexture(false);
+      }
       this.#zoomPanContainer.removeChild(this.#_gridContainer);
       this.#_gridContainer.destroy({ children: true });
       this.#_gridContainer = undefined;
+      this.#_gridMinor = undefined;
+      this.#_gridMajor = undefined;
+      this.#_artboard = undefined;
     }
   }
 }

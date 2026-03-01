@@ -1,3 +1,3 @@
-export { DragStore } from './DragStore';
-export type { DragStoreValue, DragCallbacks, DragStoreConfig } from './DragStore';
+export { DragStore } from './DragStore.js';
+export type { DragStoreValue, DragCallbacks, DragStoreConfig } from './DragStore.js';
 

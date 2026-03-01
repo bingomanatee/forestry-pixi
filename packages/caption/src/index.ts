@@ -1,4 +1,4 @@
-export { CaptionStore } from './CaptionStore';
+export { CaptionStore } from './CaptionStore.js';
 export {
     CaptionShapeSchema,
     PointSchema,
@@ -25,7 +25,7 @@ export {
     type CaptionConfigInput,
     type CaptionConfig,
     type CaptionState,
-} from './types';
+} from './types.js';
 export {
     computePointerTriangle,
     getRectBoundaryPoint,
@@ -34,4 +34,4 @@ export {
     triangleToPathPoints,
     type TrianglePoints,
     type ThoughtScallop,
-} from './geometry';
+} from './geometry.js';

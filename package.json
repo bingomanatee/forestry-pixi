@@ -1,6 +1,6 @@
 {
   "name": "@wonderlandlabs-pixi-ux/monorepo",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "monorepo with grid, panel, drag packages, and other utilities for wonderlandlabs-pixi-ux",
   "private": true,
   "workspaces": [
@@ -13,11 +13,18 @@
     "docs:dev": "yarn workspace @wonderlandlabs-pixi-ux/docs dev",
     "docs:start": "yarn workspace @wonderlandlabs-pixi-ux/docs start",
     "docs:build": "yarn workspace @wonderlandlabs-pixi-ux/docs build",
+    "package-validator:dev": "yarn workspace @wonderlandlabs-pixi-ux/package-validator dev",
+    "package-validator:build": "yarn workspace @wonderlandlabs-pixi-ux/package-validator build",
+    "package-validator:preview": "yarn workspace @wonderlandlabs-pixi-ux/package-validator preview",
+    "build:validator-targets": "yarn workspace @wonderlandlabs-pixi-ux/root-container build && yarn workspace @wonderlandlabs-pixi-ux/grid build && yarn workspace @wonderlandlabs-pixi-ux/drag build",
+    "validate:release": "yarn workspace @wonderlandlabs-pixi-ux/package-validator validate:release",
+    "validate:release:built": "yarn build:validator-targets && yarn validate:release",
     "build": "yarn workspaces foreach -A run build",
     "clean": "yarn workspaces foreach -A run clean",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "publishAll": "yarn workspaces foreach -A --no-private -t npm publish --access public"
   },
   "devDependencies": {
     "@storybook/html-vite": "^10.1.12",

@@ -1,8 +1,8 @@
-export {WindowsManager, TEXTURE_STATUS} from './WindowsManager';
-export type {WindowsManagerConfig, TextureStatus} from './WindowsManager';
-export * from './types';
-export * from './constants';
-export * from './styles';
-export {WindowStore} from './WindowStore';
-export {EditableWindowStore} from './EditableWindowStore';
-export {TitlebarStore} from './TitlebarStore';
+export {WindowsManager, TEXTURE_STATUS} from './WindowsManager.js';
+export type {WindowsManagerConfig, TextureStatus} from './WindowsManager.js';
+export * from './types.js';
+export * from './constants.js';
+export * from './styles.js';
+export {WindowStore} from './WindowStore.js';
+export {EditableWindowStore} from './EditableWindowStore.js';
+export {TitlebarStore} from './TitlebarStore.js';

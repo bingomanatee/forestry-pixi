@@ -1,4 +1,4 @@
-export { ButtonStore } from './ButtonStore';
+export { ButtonStore } from './ButtonStore.js';
 export {
     ButtonModeSchema,
     ButtonConfigSchema,
@@ -7,5 +7,5 @@ export {
     type ButtonMode,
     type ButtonConfig,
     type RgbColor,
-} from './types';
+} from './types.js';
 

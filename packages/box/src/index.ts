@@ -53,7 +53,7 @@ export {
     type AxisConstrain,
     type BoxAlign,
     type BoxConstrain,
-} from './types.boxtree';
+} from './types.boxtree.js';
 export {
     BoxTree,
     createBoxTreeState,
@@ -62,19 +62,19 @@ export {
     type BoxRenderer,
     type BoxRenderMapFn,
     type BoxTreeRuntimeConfig,
-} from './BoxTree';
+} from './BoxTree.js';
 export {
     MapEnhanced,
-} from './BoxUxContextMap';
+} from './BoxUxContextMap.js';
 export {
     BoxUxBase,
-} from './BoxUxBase';
+} from './BoxUxBase.js';
 export {
     BoxUxPixi,
     BoxTreeUx,
     BoxTreeRenderer,
     type BoxTreeStyleManagerLike,
-} from './BoxUx';
+} from './BoxUx.js';
 export {
     ROOT_CONTAINER,
     BACKGROUND_CONTAINER,
@@ -83,13 +83,13 @@ export {
     OVERLAY_CONTAINER,
     STROKE_CONTAINER,
     BOX_UX_ENV,
-} from './constants.ux';
+} from './constants.ux.js';
 export {
     type BoxTreeFillStyle,
     type BoxTreeStrokeStyle,
     type BoxTreeStyleMap,
     type BoxTreeUxStyleManagerLike,
-} from './types.ux';
+} from './types.ux.js';
 export {
     SizeModeSchema as TreeSizeModeSchema,
     FractionalMeasurementModeSchema as TreeFractionalMeasurementModeSchema,
@@ -118,7 +118,7 @@ export {
     type Measurement,
     type PxValue,
     type AxisConstraintLike,
-} from './types';
+} from './types.js';
 export {
     AXIS,
     ALIGN_ENUM_KEYWORDS,
@@ -135,13 +135,13 @@ export {
     MEASUREMENT_MODE,
     SIZE_MODE_INPUT,
     SIZE_MODE,
-} from './constants';
+} from './constants.js';
 export {
     resolveMeasurement as resolveTreeMeasurement,
     resolveMeasurementPx,
     resolveConstraintValuePx,
     applyAxisConstraints,
-} from './sizeUtils';
+} from './sizeUtils.js';
 export {
     boxTreeToPixi,
     boxTreeToSvg,
@@ -149,5 +149,5 @@ export {
     type BoxTreeToPixiOptions,
     type BoxTreeToSvgNodeStyle,
     type BoxTreeToSvgOptions,
-} from './boxTreeRenderers';
-export { combinePaths, pathString, pathToString, type Path } from './pathUtils';
+} from './boxTreeRenderers.js';
+export { combinePaths, pathString, pathToString, type Path } from './pathUtils.js';
