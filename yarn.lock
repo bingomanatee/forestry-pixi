@@ -3651,22 +3651,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@published/drag@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/drag/-/drag-1.1.1.tgz":
-  version: 1.1.1
-  resolution: "@published/drag@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/drag/-/drag-1.1.1.tgz"
+"@published/drag@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/drag/-/drag-1.1.2.tgz":
+  version: 1.1.2
+  resolution: "@published/drag@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/drag/-/drag-1.1.2.tgz"
   dependencies:
     "@wonderlandlabs-pixi-ux/ticker-forest": "workspace:^"
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
     zod: "npm:^4.3.6"
   peerDependencies:
     pixi.js: ^8.15.1
-  checksum: 65bdc0b5465ae9dcea08b8dc16a8b58953578deec7fc96cff69c9e33ce91911c186cef4eedf7b95274aad910b5199715eb1da17bce1e1ce0b818fea9e3694f80
+  checksum: 5e13e7c91494827f520017d984defeaef1783fbe253ac605adf7b8ce1e8b5cc976a38cb3be883e96c20ba87b3f5d33970e1af65eb0f4f44748323cab365b89af
   languageName: node
   linkType: hard
 
-"@published/grid@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/grid/-/grid-1.1.1.tgz":
-  version: 1.1.1
-  resolution: "@published/grid@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/grid/-/grid-1.1.1.tgz"
+"@published/grid@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/grid/-/grid-1.1.2.tgz":
+  version: 1.1.2
+  resolution: "@published/grid@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/grid/-/grid-1.1.2.tgz"
   dependencies:
     "@wonderlandlabs-pixi-ux/ticker-forest": "workspace:^"
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
@@ -3674,18 +3674,18 @@ __metadata:
     zod: "npm:^4.3.6"
   peerDependencies:
     pixi.js: ^8.15.1
-  checksum: 5e74bf9712fc98871ec4001828be1b3590d6ef23f17c5f90f996335441c31f50e832b258cb1c20fcee01cbd53583685ce27d1b2bbdc00f6937fe025637a8656e
+  checksum: 29d879d15178a606be813c74e230797f2665e47d1a0828ed54960451d60f417ae5b6ad63aa28aff465ba15a47de6aba17a820a85c8f2da55085265d28b732bdd
   languageName: node
   linkType: hard
 
-"@published/root-container@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/root-container/-/root-container-1.1.1.tgz":
-  version: 1.1.1
-  resolution: "@published/root-container@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/root-container/-/root-container-1.1.1.tgz"
+"@published/root-container@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/root-container/-/root-container-1.1.2.tgz":
+  version: 1.1.2
+  resolution: "@published/root-container@https://registry.npmjs.org/@wonderlandlabs-pixi-ux/root-container/-/root-container-1.1.2.tgz"
   dependencies:
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
     immer: "npm:^11.1.4"
     pixi.js: "npm:^8.15.1"
-  checksum: 76c32840d91790bef55ac25eacd524eecb3b10b7c264769e56330c124e45d0f0d94ccf8a15bcea6003db955c5d977ebd85a54c84ac17dcfa7e1d5784cda8b8f3
+  checksum: 08e59d5d2ae6f9f274fa219d5e44ea76d902249874c42bf9698ee567dc556869913c83e6a1bc01107ca4b6cebf10352db5ebfe96b17e88ad4703f62132345fd0
   languageName: node
   linkType: hard
 
@@ -5135,7 +5135,7 @@ __metadata:
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -5151,7 +5151,7 @@ __metadata:
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -5166,7 +5166,7 @@ __metadata:
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -5197,7 +5197,7 @@ __metadata:
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -5207,12 +5207,12 @@ __metadata:
   dependencies:
     "@wonderlandlabs-pixi-ux/ticker-forest": "workspace:^"
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
-    pixi.js: "npm:^8.15.1"
+    pixi.js: "npm:8.16.0"
     typescript: "npm:^5.5.4"
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -5226,7 +5226,7 @@ __metadata:
     "@vitest/ui": "npm:^4.0.18"
     happy-dom: "npm:^20.3.10"
     jsdom: "npm:^27.4.0"
-    pixi.js: "npm:^8.15.1"
+    pixi.js: "npm:8.16.0"
     storybook: "npm:^10.1.12"
     typescript: "npm:^5.5.4"
     vitest: "npm:^4.0.18"
@@ -5237,15 +5237,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@wonderlandlabs-pixi-ux/package-validator@workspace:apps/package-validator"
   dependencies:
-    "@published/drag": "https://registry.npmjs.org/@wonderlandlabs-pixi-ux/drag/-/drag-1.1.1.tgz"
-    "@published/grid": "https://registry.npmjs.org/@wonderlandlabs-pixi-ux/grid/-/grid-1.1.1.tgz"
-    "@published/root-container": "https://registry.npmjs.org/@wonderlandlabs-pixi-ux/root-container/-/root-container-1.1.1.tgz"
+    "@published/drag": "https://registry.npmjs.org/@wonderlandlabs-pixi-ux/drag/-/drag-1.1.2.tgz"
+    "@published/grid": "https://registry.npmjs.org/@wonderlandlabs-pixi-ux/grid/-/grid-1.1.2.tgz"
+    "@published/root-container": "https://registry.npmjs.org/@wonderlandlabs-pixi-ux/root-container/-/root-container-1.1.2.tgz"
     "@react-router/dev": "npm:^7.13.1"
     "@react-router/node": "npm:^7.13.1"
     "@wonderlandlabs-pixi-ux/drag": "workspace:^"
     "@wonderlandlabs-pixi-ux/grid": "workspace:^"
     "@wonderlandlabs-pixi-ux/root-container": "workspace:^"
-    pixi.js: "npm:^8.15.1"
+    pixi.js: "npm:8.16.0"
     react: "npm:^18.2.1"
     react-dom: "npm:^18.2.1"
     react-icons: "npm:^5.5.0"
@@ -5261,7 +5261,7 @@ __metadata:
   dependencies:
     "@wonderlandlabs-pixi-ux/ticker-forest": "workspace:^"
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
-    pixi.js: "npm:^8.15.1"
+    pixi.js: "npm:8.16.0"
     typescript: "npm:^5.5.4"
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
@@ -5274,7 +5274,7 @@ __metadata:
   dependencies:
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
     immer: "npm:^11.1.4"
-    pixi.js: "npm:^8.15.1"
+    pixi.js: "npm:8.16.0"
     typescript: "npm:^5.5.4"
     vitest: "npm:^4.0.18"
   languageName: unknown
@@ -5295,7 +5295,7 @@ __metadata:
   resolution: "@wonderlandlabs-pixi-ux/ticker-forest@workspace:packages/ticker-forest"
   dependencies:
     "@wonderlandlabs/forestry4": "npm:^4.1.15"
-    pixi.js: "npm:^8.15.1"
+    pixi.js: "npm:8.16.0"
     typescript: "npm:^5.5.4"
     vitest: "npm:^4.0.18"
   languageName: unknown
@@ -5312,7 +5312,7 @@ __metadata:
     vitest: "npm:^4.0.18"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -5331,7 +5331,7 @@ __metadata:
     typescript: "npm:^5.5.4"
     zod: "npm:^4.3.6"
   peerDependencies:
-    pixi.js: ^8.15.1
+    pixi.js: 8.16.0
   languageName: unknown
   linkType: soft
 
@@ -11463,7 +11463,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pixi.js@npm:^8.15.1":
+"pixi.js@npm:8.16.0, pixi.js@npm:^8.15.1":
   version: 8.16.0
   resolution: "pixi.js@npm:8.16.0"
   dependencies:

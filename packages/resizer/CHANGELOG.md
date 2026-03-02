@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.1.3 - 2026-03-02
+
+- upgrade to pixi 8.16
+
 ## 1.0 
 
 Got basic delaying of update to tie into the PIXI Ticker class's metabolism

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.1.3 - 2026-03-02
+
+- upgrade to pixi 8.16
+
 ## 1.0 initial
 
 got rendering cycles working, removed PIXI artifacts for mid-render changes

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.1.3 - 2026-03-02
+
+- upgrade to pixi 8.16
+
 ## 1.1.2 - 2026-02-28
 
 - Replaced previous texture-repeat grid rendering with direct `Graphics` redraw.
