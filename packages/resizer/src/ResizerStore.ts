@@ -2,7 +2,7 @@ import {TickerForest} from '@wonderlandlabs-pixi-ux/ticker-forest';
 import {Application, Container, FederatedPointerEvent, Graphics, Rectangle} from 'pixi.js';
 import {distinctUntilChanged} from 'rxjs';
 import {trackDrag, TrackDragResult} from './trackDrag';
-import type {Color} from './types';
+import type {Color, RectTransform, RectTransformPhase, TransformedRectCallback} from './types';
 import {HandleMode, HandlePosition} from './types';
 import type {Rect} from './rectTypes';
 import {RectSchema} from './rectTypes';
@@ -18,6 +18,8 @@ export interface ResizerStoreConfig {
     constrain?: boolean;
     mode?: HandleMode;
     handleContainer?: Container;
+    rectTransform?: RectTransform;
+    onTransformedRect?: TransformedRectCallback;
 }
 
 /**
@@ -54,6 +56,8 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
     private color: Color;
     private constrain: boolean;
     private mode: HandleMode;
+    private rectTransform?: RectTransform;
+    private onTransformedRect?: TransformedRectCallback;
 
     // Drag state
     private dragHandle: HandlePosition | null = null;
@@ -64,6 +68,8 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
     private dragTrackers = new Map<Graphics, TrackDragResult>();
     private handlesContainer: Container;
     private ownsHandlesContainer: boolean;
+    private lastHandleWorldScaleX = Number.NaN;
+    private lastHandleWorldScaleY = Number.NaN;
 
     constructor(config: ResizerStoreConfig) {
         // Convert PixiJS Rectangle to ImmutRect for Immer compatibility
@@ -84,6 +90,8 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
         this.color = config.color ?? {r: 0.2, g: 0.6, b: 1};
         this.constrain = config.constrain ?? false;
         this.mode = config.mode ?? 'ONLY_CORNER';
+        this.rectTransform = config.rectTransform;
+        this.onTransformedRect = config.onTransformedRect;
 
         // Get parent container for stage traversal and handle container management
         const parent = this.#targetContainer.parent;
@@ -103,10 +111,11 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
         }
 
         // Find the stage (rootContainer container) for global event listeners
-       this.#initHitArea();
+        this.#initHitArea();
 
         // Create handles
         this.createHandles();
+        this.ticker.add(this.$.onHandleScaleTick, this);
         this.kickoff();
     }
 
@@ -139,8 +148,20 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
         this.updateHandles();
 
         this.drawRect?.(this.asRect, this.#targetContainer);
+        this.emitTransformedPreview();
     }
 
+    onHandleScaleTick() {
+        if (this.handles.size === 0) {
+            return;
+        }
+        const {x, y} = this.getWorldScale(this.handlesContainer);
+        const changed = Math.abs(x - this.lastHandleWorldScaleX) > Number.EPSILON
+            || Math.abs(y - this.lastHandleWorldScaleY) > Number.EPSILON;
+        if (changed) {
+            this.updateHandles({x, y});
+        }
+    }
 
     /**
      * Drag start handler - bound via this.$
@@ -179,13 +200,20 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
     onDragEnd(event: FederatedPointerEvent) {
         event.stopPropagation();
 
+        let releaseRect = this.value.rect;
+        if (this.rectTransform) {
+            releaseRect = this.applyRectTransform(this.value.rect, 'release');
+            if (!rectDiff(this.value.rect, releaseRect)) {
+                this.setRect(releaseRect);
+            }
+        }
+
         this.dragHandle = null;
         this.dragStartRect = null;
 
         // Call onRelease callback if provided
         if (this.onRelease) {
-            // Convert ImmerableRectangle to PixiJS Rectangle for callback
-            this.onRelease(this.asRect);
+            this.onRelease(new Rectangle(releaseRect.x, releaseRect.y, releaseRect.width, releaseRect.height));
         }
     }
 
@@ -311,18 +339,54 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
         return handle;
     }
 
+    private getWorldScale(container: Container): {x: number; y: number} {
+        const wt = container.worldTransform;
+        const worldDx = Math.sqrt(wt.a * wt.a + wt.b * wt.b);
+        const worldDy = Math.sqrt(wt.c * wt.c + wt.d * wt.d);
+        return {
+            x: worldDx || 1,
+            y: worldDy || 1
+        };
+    }
+
+    private applyRectTransform(rect: Rect, phase: RectTransformPhase): Rect {
+        if (!this.rectTransform) {
+            return rect;
+        }
+        const rawRect = new Rectangle(rect.x, rect.y, rect.width, rect.height);
+        const transformed = RectSchema.parse(this.rectTransform({
+            rect: new Rectangle(rawRect.x, rawRect.y, rawRect.width, rawRect.height),
+            phase,
+            handle: this.dragHandle,
+        }));
+        this.onTransformedRect?.(
+            rawRect,
+            new Rectangle(transformed.x, transformed.y, transformed.width, transformed.height),
+            phase
+        );
+        return transformed;
+    }
+
+    private emitTransformedPreview() {
+        if (!this.dragHandle || !this.rectTransform || !this.onTransformedRect) {
+            return;
+        }
+        this.applyRectTransform(this.value.rect, 'drag');
+    }
+
     /**
      * Update handle positions based on current rect
      */
-    private updateHandles() {
+    private updateHandles(handleScale?: {x: number; y: number}) {
+        const scale = handleScale ?? this.getWorldScale(this.handlesContainer);
+        this.lastHandleWorldScaleX = scale.x;
+        this.lastHandleWorldScaleY = scale.y;
         this.handles.forEach((handle, position) => {
             const localPos = this.getHandleLocalPosition(position);
 
             handle.position.set(localPos.x, localPos.y);
             // Counter-scale to maintain constant size
-            const parentScale = this.#targetContainer.parent?.scale.x ?? 1;
-            const scale = 1 / parentScale;
-            handle.scale.set(scale, scale);
+            handle.scale.set(1 / scale.x, 1 / scale.y);
         });
     }
 
@@ -419,6 +483,7 @@ export class ResizerStore extends TickerForest<ResizerStoreValue> {
      * Remove all handles and cleanup
      */
     public removeHandles() {
+        this.ticker.remove(this.$.onHandleScaleTick, this);
 
         // Destroy all drag trackers
         this.dragTrackers.forEach((tracker) => tracker.destroy());

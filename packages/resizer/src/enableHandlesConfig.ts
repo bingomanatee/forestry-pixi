@@ -1,5 +1,5 @@
 import { Application, Container, Rectangle } from "pixi.js";
-import { Color, HandleMode } from "./types";
+import { Color, HandleMode, RectTransform, TransformedRectCallback } from "./types";
 
 /**
  * Configuration for enableHandles
@@ -19,4 +19,8 @@ export interface EnableHandlesConfig {
     constrain?: boolean;
     /** Handle mode: corner only, edge only, or both (default: ONLY_CORNER) */
     mode?: HandleMode;
+    /** Optional rectangle transform (e.g., snapping) */
+    rectTransform?: RectTransform;
+    /** Optional callback for transformed-rectangle preview */
+    onTransformedRect?: TransformedRectCallback;
 }

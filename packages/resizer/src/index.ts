@@ -12,6 +12,10 @@ export {
 export type {
   Color,
   HandleMode,
+  RectTransform,
+  RectTransformParams,
+  RectTransformPhase,
+  TransformedRectCallback,
 } from './types.js';
 
 export type {
@@ -20,4 +24,3 @@ export type {
 } from './trackDrag.js';
 
 export type { EnableHandlesConfig } from "./enableHandlesConfig.js";
-

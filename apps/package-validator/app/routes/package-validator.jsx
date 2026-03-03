@@ -6,7 +6,7 @@ import {
   resolveSourceLoader,
   runHeartbeat,
 } from "../../src/packageHeartbeats.js";
-import { Application, Container, Graphics } from "pixi.js";
+import { Application, Container, Graphics, Rectangle } from "pixi.js";
 import { FiArrowDown, FiArrowLeft, FiArrowRight, FiArrowUp, FiRotateCcw } from "react-icons/fi";
 
 const SOURCE_LIST = [SOURCE_MODES.published, SOURCE_MODES.workspace];
@@ -340,6 +340,233 @@ export default function PackageValidatorRoute() {
               }
             },
           });
+          return;
+        }
+
+        if (selectedPackageId === "resizer") {
+          app.stage.eventMode = "static";
+          app.stage.hitArea = new Rectangle(0, 0, app.screen.width, app.screen.height);
+
+          const frame = new Container();
+          frame.position.set(app.screen.width / 2, app.screen.height / 2);
+          app.stage.addChild(frame);
+
+          // Keep scale on an ancestor that is not the target's direct parent.
+          const scaleCarrier = new Container();
+          frame.addChild(scaleCarrier);
+
+          const referenceSpace = new Container();
+          scaleCarrier.addChild(referenceSpace);
+          addDemoGeometry(referenceSpace);
+
+          const target = new Container();
+          referenceSpace.addChild(target);
+
+          const box = new Graphics();
+          target.addChild(box);
+
+          const drawRect = (rect) => {
+            box.clear();
+            box
+              .rect(rect.x, rect.y, rect.width, rect.height)
+              .fill(0x1d4ed8)
+              .stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
+          };
+
+          const initialRect = new Rectangle(-80, -50, 160, 100);
+          drawRect(initialRect);
+
+          const handles = mod.enableHandles(target, initialRect, {
+            app,
+            mode: "EDGE_AND_CORNER",
+            size: 12,
+            drawRect,
+          });
+          handles.setVisible(true);
+
+          const observe = createDemoObserver(setDemo, () => ({
+            zoom: Number(scaleCarrier.scale.x.toFixed(2)),
+            x: Math.round(frame.position.x),
+            y: Math.round(frame.position.y),
+          }));
+          observe();
+
+          rootDemoApiRef.current = createDemoController({
+            observe,
+            onSetZoom(value) {
+              scaleCarrier.scale.set(value);
+            },
+            onPanBy(dx, dy) {
+              frame.position.set(frame.position.x + dx, frame.position.y + dy);
+            },
+            onResetView() {
+              scaleCarrier.scale.set(1);
+              frame.position.set(app.screen.width / 2, app.screen.height / 2);
+            },
+            onDestroy() {
+              handles.removeHandles();
+              handles.cleanup();
+              app.destroy(true);
+              if (mountNode) {
+                mountNode.innerHTML = "";
+              }
+            },
+          });
+          return;
+        }
+
+        if (selectedPackageId === "resizer-snap") {
+          app.stage.eventMode = "static";
+          app.stage.hitArea = new Rectangle(0, 0, app.screen.width, app.screen.height);
+
+          const frame = new Container();
+          frame.position.set(app.screen.width / 2, app.screen.height / 2);
+          app.stage.addChild(frame);
+
+          // Keep scale on an ancestor that is not the target's direct parent.
+          const scaleCarrier = new Container();
+          frame.addChild(scaleCarrier);
+
+          const referenceSpace = new Container();
+          scaleCarrier.addChild(referenceSpace);
+          addDemoGeometry(referenceSpace);
+
+          const target = new Container();
+          referenceSpace.addChild(target);
+
+          const box = new Graphics();
+          const augmented = new Graphics();
+          target.addChild(box, augmented);
+          let marchingRect = null;
+          let marchingPhase = 0;
+          const ANT_SPACING = 8;
+
+          const normalizeRect = (rect) => {
+            const x = rect.width >= 0 ? rect.x : rect.x + rect.width;
+            const y = rect.height >= 0 ? rect.y : rect.y + rect.height;
+            return { x, y, width: Math.abs(rect.width), height: Math.abs(rect.height) };
+          };
+
+          const getPerimeterPoint = (rect, distance) => {
+            const { x, y, width, height } = normalizeRect(rect);
+            const top = width;
+            const right = top + height;
+            const bottom = right + width;
+
+            if (distance <= top) return { x: x + distance, y };
+            if (distance <= right) return { x: x + width, y: y + (distance - top) };
+            if (distance <= bottom) return { x: x + width - (distance - right), y: y + height };
+            return { x, y: y + height - (distance - bottom) };
+          };
+
+          const drawMarchingAnts = () => {
+            augmented.clear();
+            if (!marchingRect) return;
+            const normalized = normalizeRect(marchingRect);
+            const perimeter = 2 * (normalized.width + normalized.height);
+            if (perimeter <= 0) return;
+
+            for (let d = 0; d <= perimeter; d += ANT_SPACING) {
+              const point = getPerimeterPoint(marchingRect, d);
+              const offsetIndex = Math.floor((d + marchingPhase) / ANT_SPACING) % 2;
+              const color = offsetIndex === 0 ? 0x9ca3af : 0x6b7280;
+              augmented.circle(point.x, point.y, 1.4).fill({ color, alpha: 0.95 });
+            }
+          };
+
+          const onMarchingAntsTick = () => {
+            if (!marchingRect) return;
+            marchingPhase = (marchingPhase + 1) % (ANT_SPACING * 2);
+            drawMarchingAnts();
+          };
+
+          app.ticker.add(onMarchingAntsTick);
+
+          const SNAP_GRID = 16;
+          const MIN_SIZE = 64;
+          const snapValue = (value) => Math.round(value / SNAP_GRID) * SNAP_GRID;
+          const snapDimension = (value) => {
+            const sign = value < 0 ? -1 : 1;
+            const snappedAbs = snapValue(Math.abs(value));
+            const roundedAbs = Math.max(SNAP_GRID, snappedAbs);
+            const clampedAbs = Math.max(MIN_SIZE, roundedAbs);
+            return sign * clampedAbs;
+          };
+          const snapRect = (rect) => new Rectangle(
+            snapValue(rect.x),
+            snapValue(rect.y),
+            snapDimension(rect.width),
+            snapDimension(rect.height),
+          );
+
+          const drawRect = (rect) => {
+            box.clear();
+            box
+              .rect(rect.x, rect.y, rect.width, rect.height)
+              .fill(0x1d4ed8)
+              .stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
+          };
+
+          const initialRect = new Rectangle(-80, -50, 160, 100);
+          drawRect(initialRect);
+
+          const handles = mod.enableHandles(target, initialRect, {
+            app,
+            mode: "EDGE_AND_CORNER",
+            size: 12,
+            drawRect,
+            rectTransform: ({ rect }) => snapRect(rect),
+            onTransformedRect: (_rawRect, transformedRect, phase) => {
+              if (phase !== "drag") {
+                marchingRect = null;
+                drawMarchingAnts();
+                return;
+              }
+              marchingRect = new Rectangle(
+                transformedRect.x,
+                transformedRect.y,
+                transformedRect.width,
+                transformedRect.height,
+              );
+              drawMarchingAnts();
+            },
+            onRelease: () => {
+              marchingRect = null;
+              drawMarchingAnts();
+            },
+          });
+          handles.setVisible(true);
+
+          const observe = createDemoObserver(setDemo, () => ({
+            zoom: Number(scaleCarrier.scale.x.toFixed(2)),
+            x: Math.round(frame.position.x),
+            y: Math.round(frame.position.y),
+          }));
+          observe();
+
+          rootDemoApiRef.current = createDemoController({
+            observe,
+            onSetZoom(value) {
+              scaleCarrier.scale.set(value);
+            },
+            onPanBy(dx, dy) {
+              frame.position.set(frame.position.x + dx, frame.position.y + dy);
+            },
+            onResetView() {
+              scaleCarrier.scale.set(1);
+              frame.position.set(app.screen.width / 2, app.screen.height / 2);
+            },
+            onDestroy() {
+              app.ticker.remove(onMarchingAntsTick);
+              handles.removeHandles();
+              handles.cleanup();
+              app.destroy(true);
+              if (mountNode) {
+                mountNode.innerHTML = "";
+              }
+            },
+          });
+          return;
         }
       } catch (error) {
         if (!cancelled) {

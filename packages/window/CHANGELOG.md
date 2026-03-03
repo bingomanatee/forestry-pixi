@@ -1,8 +1,12 @@
 # CHANGELOG
 
+## 1.1.4 - 2026-03-03
+
+- Bumped package version to align with `@wonderlandlabs-pixi-ux/resizer@1.1.4`.
+
 ## 1.1.3 - 2026-03-02
 
-- upgrade to pixi 8.16
+- upgrade to Pixi 8.16
 
 ## 1.1.1 - 2026-02-27
 

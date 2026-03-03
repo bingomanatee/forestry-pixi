@@ -26,9 +26,10 @@ export function enableHandles(
     color: config.color,
     constrain: config.constrain,
     mode: config.mode,
+    rectTransform: config.rectTransform,
+    onTransformedRect: config.onTransformedRect,
   });
 
   return store;
 }
-
 

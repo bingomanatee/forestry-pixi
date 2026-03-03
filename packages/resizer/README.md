@@ -42,6 +42,15 @@ const handles = enableHandles(box, new Rectangle(80, 80, 240, 140), {
   onRelease: (rect) => {
     console.log('final', rect.width, rect.height);
   },
+  rectTransform: ({ rect, phase, handle }) => {
+    const snap = (value) => Math.round(value / 20) * 20;
+    return new Rectangle(snap(rect.x), snap(rect.y), snap(rect.width), snap(rect.height));
+  },
+  onTransformedRect: (rawRect, transformedRect, phase) => {
+    if (phase === 'drag') {
+      // Optional preview for snapped/augmented coordinates while dragging.
+    }
+  },
 });
 
 // Optional helpers:
@@ -60,8 +69,13 @@ handles.setRect(new Rectangle(100, 100, 300, 160));
   color?: { r: number, g: number, b: number },
   constrain?: boolean,
   mode?: 'ONLY_EDGE' | 'ONLY_CORNER' | 'EDGE_AND_CORNER',
+  rectTransform?: (params: { rect: Rectangle, phase: 'drag' | 'release', handle: HandlePosition | null }) => Rectangle | Rect,
+  onTransformedRect?: (rawRect: Rectangle, transformedRect: Rectangle, phase: 'drag' | 'release') => void,
 }
 ```
+
+`rectTransform` is applied when drag ends (`phase: 'release'`), and the transformed rectangle is committed to store state.
+When provided with `onTransformedRect`, the same transform can be previewed during drag (`phase: 'drag'`) for augmented overlays/snapping guides.
 
 ## `ResizerStore` Methods
 

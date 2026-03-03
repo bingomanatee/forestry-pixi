@@ -1,4 +1,4 @@
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Container, Graphics, Rectangle } from 'pixi.js';
 
 function assert(condition, message) {
   if (!condition) {
@@ -89,6 +89,133 @@ async function runRootContainerTest(mod, ctx) {
   ctx.pass('created root/zoom-pan containers with drag+zoom decorators');
 }
 
+async function runResizerTest(mod, ctx) {
+  await withPixiCanvas(ctx.mountNode, async (app) => {
+    app.stage.eventMode = 'static';
+    app.stage.hitArea = new Rectangle(0, 0, app.screen.width, app.screen.height);
+
+    const frame = new Container();
+    frame.position.set(app.screen.width / 2, app.screen.height / 2);
+    app.stage.addChild(frame);
+
+    const scaleCarrier = new Container();
+    frame.addChild(scaleCarrier);
+
+    const referenceSpace = new Container();
+    scaleCarrier.addChild(referenceSpace);
+
+    const target = new Container();
+    referenceSpace.addChild(target);
+
+    const box = new Graphics();
+    target.addChild(box);
+
+    const drawRect = (rect) => {
+      box.clear();
+      box
+        .rect(rect.x, rect.y, rect.width, rect.height)
+        .fill(0x1d4ed8)
+        .stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
+    };
+
+    const initialRect = new Rectangle(-80, -50, 160, 100);
+    drawRect(initialRect);
+
+    const handles = mod.enableHandles(target, initialRect, {
+      app,
+      mode: 'EDGE_AND_CORNER',
+      size: 12,
+      drawRect,
+    });
+    handles.setVisible(true);
+
+    scaleCarrier.scale.set(1.75);
+    handles.setRect(new Rectangle(-70, -45, 180, 110));
+    assert(handles.value.rect.width === 180, 'resizer rect width did not update');
+
+    handles.removeHandles();
+    handles.cleanup();
+  });
+  ctx.pass('created always-visible resizer handles under scaled parent context');
+}
+
+async function runResizerSnapTest(mod, ctx) {
+  await withPixiCanvas(ctx.mountNode, async (app) => {
+    app.stage.eventMode = 'static';
+    app.stage.hitArea = new Rectangle(0, 0, app.screen.width, app.screen.height);
+
+    const frame = new Container();
+    frame.position.set(app.screen.width / 2, app.screen.height / 2);
+    app.stage.addChild(frame);
+
+    const scaleCarrier = new Container();
+    frame.addChild(scaleCarrier);
+
+    const referenceSpace = new Container();
+    scaleCarrier.addChild(referenceSpace);
+
+    const target = new Container();
+    referenceSpace.addChild(target);
+
+    const box = new Graphics();
+    target.addChild(box);
+
+    const drawRect = (rect) => {
+      box.clear();
+      box
+        .rect(rect.x, rect.y, rect.width, rect.height)
+        .fill(0x1d4ed8)
+        .stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
+    };
+
+    const SNAP_GRID = 16;
+    const MIN_SIZE = 64;
+    const snapValue = (value) => Math.round(value / SNAP_GRID) * SNAP_GRID;
+    const snapDimension = (value) => {
+      const sign = value < 0 ? -1 : 1;
+      const snappedAbs = snapValue(Math.abs(value));
+      const roundedAbs = Math.max(SNAP_GRID, snappedAbs);
+      const clampedAbs = Math.max(MIN_SIZE, roundedAbs);
+      return sign * clampedAbs;
+    };
+    const snapRect = (rect) => new Rectangle(
+      snapValue(rect.x),
+      snapValue(rect.y),
+      snapDimension(rect.width),
+      snapDimension(rect.height),
+    );
+
+    const initialRect = new Rectangle(-80, -50, 160, 100);
+    drawRect(initialRect);
+
+    let releasedRect = null;
+    const handles = mod.enableHandles(target, initialRect, {
+      app,
+      mode: 'EDGE_AND_CORNER',
+      size: 12,
+      drawRect,
+      rectTransform: ({ rect }) => snapRect(rect),
+      onRelease: (rect) => {
+        releasedRect = rect;
+      },
+    });
+    handles.setVisible(true);
+
+    const event = { stopPropagation() {} };
+    handles.onDragStart(event, mod.HandlePosition.BOTTOM_RIGHT);
+    handles.onDragMove(18, 10, event);
+    handles.onDragEnd(event);
+
+    assert(handles.value.rect.width === 176, 'snap transform did not round width to 16px grid');
+    assert(handles.value.rect.height === 112, 'snap transform did not round height to 16px grid');
+    assert(releasedRect?.width === 176 && releasedRect?.height === 112, 'release rect did not use transformed coordinates');
+
+    handles.removeHandles();
+    handles.cleanup();
+  });
+  ctx.pass('created snapping resizer and committed transformed coordinates on release');
+}
+
 export const SOURCE_MODES = {
   published: 'published',
   workspace: 'workspace',
@@ -136,6 +263,26 @@ export const PACKAGE_DEFINITIONS = [
     heartbeat: runGridTest,
     publishedLoader: () => import('@published/grid'),
     workspaceLoader: () => import('@wonderlandlabs-pixi-ux/grid'),
+  }),
+  createPackageDefinition({
+    id: 'resizer',
+    title: 'Resizer',
+    workspaceImport: '@wonderlandlabs-pixi-ux/resizer',
+    publishedImport: '@published/resizer',
+    description: 'Resizable rectangle with always-visible handles in a zoomable context.',
+    heartbeat: runResizerTest,
+    publishedLoader: () => import('@published/resizer'),
+    workspaceLoader: () => import('@wonderlandlabs-pixi-ux/resizer'),
+  }),
+  createPackageDefinition({
+    id: 'resizer-snap',
+    title: 'Resizer (Snap)',
+    workspaceImport: '@wonderlandlabs-pixi-ux/resizer',
+    publishedImport: '@published/resizer',
+    description: 'Snapping transform demo with augmented rectangle preview and release commit.',
+    heartbeat: runResizerSnapTest,
+    publishedLoader: () => import('@published/resizer'),
+    workspaceLoader: () => import('@wonderlandlabs-pixi-ux/resizer'),
   }),
   createPackageDefinition({
     id: 'drag',

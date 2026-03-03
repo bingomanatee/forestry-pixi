@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.1.4 - 2026-03-03
+
+- Added optional `rectTransform(rect, phase)` hook to support coordinate transforms such as snapping.
+- Added optional `onTransformedRect(rawRect, transformedRect, phase)` callback for transformed-rect preview during drag.
+- Applied transformed coordinates on drag release before calling `onRelease`.
+- Kept resize handles visually stable across parent/super-container scaling by counter-scaling using world transform.
+
 ## 1.1.3 - 2026-03-02
 
 - upgrade to pixi 8.16

@@ -29,18 +29,20 @@ From the repo root:
 - `root-container`
 - `grid`
 - `drag`
+- `resizer`
+- `resizer-snap`
 
 ## UI route format
 
-- `/root-container/published` loads pinned published npm alias (`@published/root-container@1.1.1` tarball)
+- `/root-container/published` loads npm latest via alias (`@published/root-container -> @wonderlandlabs-pixi-ux/root-container@latest`)
 - `/root-container/workspace` loads workspace package (`@wonderlandlabs-pixi-ux/root-container`)
-- Same pattern for `/grid/*` and `/drag/*`
+- Same pattern for `/grid/*`, `/resizer/*`, `/resizer-snap/*`, and `/drag/*`
 
 ## Release workflow
 
 1. `yarn validate:release` to confirm current published package set has expected failures.
 2. `yarn validate:release --package root-container` (or full run) after local fixes/build to confirm workspace dist passes.
-3. Publish new versions, update `@published/*` tarball versions in package-validator, run `yarn install`, then re-run `yarn validate:release`.
+3. Publish new versions, run `yarn install` to refresh `@latest`, then re-run `yarn validate:release`.
 
 ## Recommended root flow
 

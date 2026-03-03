@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Rectangle } from 'pixi.js';
+import type { Rect } from './rectTypes';
 
 // ============================================================================
 // Color Types (PixiJS format: RGB values 0..1)
@@ -29,3 +30,15 @@ export enum HandlePosition {
 }
 
 export type HandleMode = 'ONLY_EDGE' | 'ONLY_CORNER' | 'EDGE_AND_CORNER';
+export type RectTransformPhase = 'drag' | 'release';
+export interface RectTransformParams {
+  rect: Rectangle;
+  phase: RectTransformPhase;
+  handle: HandlePosition | null;
+}
+export type RectTransform = (params: RectTransformParams) => Rectangle | Rect;
+export type TransformedRectCallback = (
+  rawRect: Rectangle,
+  transformedRect: Rectangle,
+  phase: RectTransformPhase,
+) => void;
